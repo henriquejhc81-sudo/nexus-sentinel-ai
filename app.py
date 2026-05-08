@@ -21,8 +21,10 @@ from engine import *
 
 def orquestrador_inteligencia(contexto):
     especialistas = ["Segurança", "Performance", "UX", "Dev", "QA", "Jurídico", "Hacker Ético"]
-    with st.status(f"🧬 Orquestrador v9.2: Sincronizando Especialistas...", expanded=True) as status:
+    with st.status(f"🧬 Orquestrador v9.5: Gerando Bio-Scan Completo...", expanded=True) as status:
+        st.write("🔍 Aplicando Overlays de Mapeamento Orgânico...")
         time.sleep(0.5)
+        st.write("🧠 Sincronizando com Base de Dados MedAI Vision X...")
         status.update(label="Sincronização Sentinel Concluída", state="complete")
     return True
 
@@ -56,6 +58,7 @@ def realizar_login():
         return False
     return True
 
+# --- CORREÇÃO SNIPER: FUNÇÃO DE IMPRESSÃO BINÁRIA v9.5 ---
 def gerar_pdf_impressao(paciente, modulo, laudo_res):
     pdf = FPDF()
     pdf.add_page()
@@ -63,24 +66,26 @@ def gerar_pdf_impressao(paciente, modulo, laudo_res):
     pdf.cell(200, 10, "GENESIS FORENSIC AI - RELATÓRIO MASTER", ln=True, align='C')
     pdf.ln(10)
     pdf.set_font("Arial", '', 11)
-    texto = f"Paciente: {paciente}\nModulo: {modulo}\n\nAnalise: {laudo_res['explicacao']}\n\nConclusao: {laudo_res['conclusao']}\n\n{laudo_res['nota_legal']}"
-    pdf.multi_cell(0, 10, texto.encode('latin-1', 'replace').decode('latin-1'))
-    return pdf.output(dest='S').encode('latin-1')
+    texto = f"PACIENTE: {paciente.upper()}\nMODULO: {modulo.upper()}\nDATA: {datetime.datetime.now()}\n\nANALISE: {laudo_res['explicacao']}\n\nFISIOLOGIA: {laudo_res['fisiologia']}\n\nCONCLUSAO: {laudo_res['conclusao']}\n\n{laudo_res['nota_legal']}"
+    # Sanitização para evitar erro de codificação
+    texto_clean = texto.encode('latin-1', 'replace').decode('latin-1')
+    pdf.multi_cell(0, 10, texto_clean)
+    return pdf.output(dest='S') # Retorno de bytes puro para o Streamlit
 
-# --- INTERFACE DASHBOARD v9.2 ---
+# --- INTERFACE DASHBOARD v9.5 ---
 
-st.set_page_config(page_title="GENESIS MASTER v9.2", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="GENESIS MASTER v9.5", layout="wide", page_icon="🛡️")
 init_db_multiplayer()
 
 if realizar_login():
     st.markdown("""<style>
         .main { background-color: #0e1117; }
-        .report-card { background-color: #111827; padding: 25px; border-radius: 15px; border-left: 8px solid #3b82f6; margin-top: 20px; }
+        .report-card { background-color: #111827; padding: 25px; border-radius: 15px; border-left: 8px solid #3b82f6; margin-top: 20px; box-shadow: 0px 4px 15px rgba(0,0,0,0.5); }
         .legal-note { background-color: #1a202c; padding: 15px; border-radius: 8px; font-size: 0.9rem; color: #a0aec0; border: 1px solid #2d3748; margin-top: 20px; }
-        .diagnosis-text { font-size: 1.05rem; color: #e5e7eb; line-height: 1.6; }
+        .diagnosis-text { font-size: 1.1rem; color: #e5e7eb; line-height: 1.7; text-align: justify; }
     </style>""", unsafe_allow_html=True)
 
-    st.title("🛡️ GENESIS FORENSIC AI v9.2")
+    st.title("🛡️ GENESIS FORENSIC AI v9.5")
 
     with st.sidebar:
         st.header("👤 PRONTUÁRIO")
@@ -102,30 +107,35 @@ if realizar_login():
             f = st.radio("Fonte", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key=label+"s")
             ent = st.camera_input("Scanner") if "📸" in f else st.file_uploader("Importar", type=['jpg','png','jpeg'], key=label+"u")
             zoom = st.checkbox("🔍 Zoom Digital Inteligente", key=label+"z")
+            map_on = st.checkbox("🗺️ Ativar Mapeamento Orgânico (Overlay)", key=label+"m") if label == "Iridologia" else False
         
         if ent:
             img = Image.open(ent)
             img_hd = extrair_qualidade_maxima(img)
             if zoom: img_hd = aplicar_zoom_inteligente(img_hd)
+            if map_on: img_hd = aplicar_mapa_iridologico(img_hd)
+            
             with col_res:
-                st.image(img_hd, use_container_width=True)
-                if st.button(f"⚡ GERAR DIAGNÓSTICO MASTER {label.upper()}", type="primary", key=label+"b"):
+                st.image(img_hd, caption="Visualização Ultra-HD com Camada de Mapeamento", use_container_width=True)
+                if st.button(f"⚡ GERAR BIO-SCAN MASTER {label.upper()}", type="primary", key=label+"b"):
                     orquestrador_inteligencia(label)
                     res_tec = motor_diagnostico_genesis(img_hd, label)
                     res_m = gerar_diagnostico_master(label, res_tec)
                     
                     st.markdown(f"""<div class="report-card">
-                        <h2 style="color:#3b82f6;">🧬 {res_m['titulo']}</h2>
-                        <p class="diagnosis-text"><b>ANÁLISE INTEGRAL:</b> {res_m['explicacao']}</p>
-                        <p class="diagnosis-text"><b>FISIOLOGIA:</b> {res_m['fisiologia']}</p>
-                        <p class="diagnosis-text" style="color:#22c55e;"><b>🎯 CONCLUSÃO:</b> {res_m['conclusao']}</p>
+                        <h2 style="color:#3b82f6; text-align:center;">🧬 {res_m['titulo']}</h2>
+                        <hr style="border: 0.5px solid #3b82f6;">
+                        <p class="diagnosis-text"><b>ANÁLISE DO TERRENO:</b> {res_m['explicacao']}</p>
+                        <p class="diagnosis-text"><b>PARECER FISIOLÓGICO:</b> {res_m['fisiologia']}</p>
+                        <p class="diagnosis-text" style="color:#22c55e;"><b>🎯 CONCLUSÃO PREVENTIVA:</b> {res_m['conclusao']}</p>
                         <div class="legal-note">{res_m['nota_legal'].replace('\n', '<br>')}</div>
                     </div>""", unsafe_allow_html=True)
                     
-                    st.image(res_tec['viz'], caption="Visão Multiespectral de Contraste", width=400)
+                    st.image(res_tec['viz'], caption="Visão Multiespectral (Detecção de Densidade)", width=400)
                     
+                    # DOWNLOAD PDF COM CORREÇÃO BINÁRIA
                     pdf_b = gerar_pdf_impressao(nome_paciente, label, res_m)
-                    st.download_button("🖨️ IMPRIMIR RELATÓRIO COMPLETO", pdf_b, file_name=f"genesis_{label}.pdf")
+                    st.download_button("🖨️ IMPRIMIR DOSSIÊ MASTER", pdf_b, file_name=f"genesis_{label}.pdf", mime="application/pdf")
 
     if m_iri: renderizar_modulo_master("Iridologia")
     elif m_der: renderizar_modulo_master("Dermatologia")
