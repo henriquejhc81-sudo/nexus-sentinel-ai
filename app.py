@@ -15,15 +15,14 @@ from gtts import gTTS
 from duckduckgo_search import DDGS  
 import plotly.graph_objects as go 
 import hashlib 
-# --- IMPORTAÇÃO EXPLÍCITA PARA EVITAR NAMEERROR ---
-from engine import extrair_qualidade_maxima, aplicar_zoom_inteligente, processar_camera_inteligente, motor_diagnostico_genesis, gerar_diagnostico_master, rastreamento_movimento_genesis, motor_multimodal_genesis
+# --- IMPORTAÇÃO COMPLETA DA ENGINE ---
+from engine import *
 
 # --- DNA NEXUS SENTINEL ESTRUTURA INTEGRADA (INTOCÁVEL) ---
 
 def orquestrador_inteligencia(contexto):
     especialistas = ["Segurança", "Performance", "UX", "Dev", "QA", "Jurídico", "Hacker Ético"]
-    with st.status(f"🧬 Orquestrador v9.1: Sincronizando Especialistas...", expanded=True) as status:
-        st.write(f"🔍 Validando Módulo: {contexto}...")
+    with st.status(f"🧬 Orquestrador v9.1: Validando Protocolos...", expanded=True) as status:
         time.sleep(0.5)
         status.update(label="Sincronização Sentinel Concluída", state="complete")
     return True
@@ -38,8 +37,6 @@ def init_db_multiplayer():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT UNIQUE, senha TEXT)''')
     conn.commit()
     conn.close()
-
-# --- SISTEMA DE AUTENTICAÇÃO ---
 
 def realizar_login():
     if "autenticado" not in st.session_state:
@@ -60,14 +57,12 @@ def realizar_login():
         return False
     return True
 
-def gerar_pdf_impressao(paciente, modulo, laudo_texto, tecnicos):
+def gerar_pdf_impressao(paciente, modulo, laudo_texto):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, "GENESIS FORENSIC AI - RELATÓRIO MASTER", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(200, 10, f" PACIENTE: {paciente.upper()}", ln=True)
     pdf.set_font("Arial", '', 11)
     pdf.multi_cell(0, 10, laudo_texto.encode('latin-1', 'replace').decode('latin-1'))
     return pdf.output(dest='S').encode('latin-1')
@@ -99,61 +94,36 @@ if realizar_login():
             st.session_state["autenticado"] = False
             st.rerun()
 
-    # --- MÓDULOS DE IMAGEM (ESTRUTURA ADITIVA E CORRIGIDA) ---
-
     def renderizar_modulo_master(label):
-        st.subheader(f"Estação {label} | Operador: {st.session_state['medico_id']}")
-        col_input, col_result = st.columns(2)
-        
-        with col_input:
-            f = st.radio("Fonte de Entrada", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key=label+"_src")
-            ent = st.camera_input("Scanner Sentinel") if "📸" in f else st.file_uploader("Importar Imagem", type=['jpg','png','jpeg'], key=label+"_up")
-            zoom_on = st.checkbox("🔍 Ativar Zoom Digital Inteligente", key=label+"_zoom")
+        st.subheader(f"Estação {label}")
+        col_in, col_res = st.columns(2)
+        with col_in:
+            f = st.radio("Fonte", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key=label+"s")
+            ent = st.camera_input("Scanner") if "📸" in f else st.file_uploader("Importar", type=['jpg','png','jpeg'], key=label+"u")
+            zoom = st.checkbox("🔍 Zoom Digital Inteligente", key=label+"z")
         
         if ent:
-            img_raw = Image.open(ent)
-            # --- SNIPER: CORREÇÃO DE CHAMADA DA ENGINE ---
-            img_hd = extrair_qualidade_maxima(img_raw)
-            if zoom_on:
-                img_hd = aplicar_zoom_inteligente(img_hd)
-            
-            with col_result:
-                st.image(img_hd, caption="Visualização Ultra-HD", use_container_width=True)
-                # --- SNIPER: GARANTINDO A RENDERIZAÇÃO DO BOTÃO DE DIAGNÓSTICO ---
-                if st.button(f"⚡ GERAR DIAGNÓSTICO MASTER {label.upper()}", type="primary", key=label+"_btn_diag"):
+            img = Image.open(ent)
+            img_hd = extrair_qualidade_maxima(img)
+            if zoom: img_hd = aplicar_zoom_inteligente(img_hd)
+            with col_res:
+                st.image(img_hd, use_container_width=True)
+                if st.button(f"⚡ GERAR DIAGNÓSTICO MASTER {label.upper()}", type="primary", key=label+"b"):
                     orquestrador_inteligencia(label)
                     res_tec = motor_diagnostico_genesis(img_hd, label)
                     res_m = gerar_diagnostico_master(label, res_tec)
-                    
                     st.markdown(f"""<div class="report-card">
                         <h2 style="color:#3b82f6;">🧬 {res_m['titulo']}</h2>
-                        <hr>
-                        <p class="diagnosis-text"><b>ANÁLISE:</b> {res_m['explicacao']}</p>
-                        <p class="diagnosis-text"><b>FISIOLOGIA:</b> {res_m['fisiologia']}</p>
-                        <p class="diagnosis-text" style="color:#22c55e;"><b>🎯 CONCLUSÃO:</b> {res_m['conclusao']}</p>
+                        <p class="diagnosis-text">{res_m['explicacao']}</p>
                     </div>""", unsafe_allow_html=True)
-                    
                     st.image(res_tec['viz'], caption="Visão Multiespectral", width=400)
-                    
-                    # Opção de Impressão de Imagem
-                    full_txt = f"{res_m['explicacao']} {res_m['conclusao']}"
-                    pdf_b = gerar_pdf_impressao(nome_paciente, label, full_txt, {})
-                    st.download_button("🖨️ IMPRIMIR LAUDO", pdf_b, file_name=f"laudo_{label}.pdf", mime="application/pdf")
 
-    # --- LÓGICA DE EXIBIÇÃO DE MÓDULOS ---
-
-    if m_iri: 
-        renderizar_modulo_master("Iridologia")
-    elif m_der: 
-        renderizar_modulo_master("Dermatologia")
-    elif m_rad: 
-        renderizar_modulo_master("Radiologia")
+    if m_iri: renderizar_modulo_master("Iridologia")
+    elif m_der: renderizar_modulo_master("Dermatologia")
+    elif m_rad: renderizar_modulo_master("Radiologia")
     elif m_lab:
-        st.subheader("🧬 Inteligência e Auditoria Laboratorial")
-        # (Lógica laboratorial v9.0 preservada aqui conforme integridade total)
-        exame_f = st.file_uploader("Upload do Exame", type=['pdf', 'jpg', 'png'], key="lab_master")
-        if exame_f and st.button("⚡ EXECUTAR AUDITORIA MASTER", type="primary"):
-            orquestrador_inteligencia("Laboratorial")
+        st.subheader("🧬 Inteligência Laboratorial")
+        exame = st.file_uploader("Upload do Exame", type=['pdf', 'jpg', 'png'])
+        if exame and st.button("⚡ EXECUTAR AUDITORIA MASTER", type="primary"):
+            orquestrador_inteligencia("Lab")
             st.success("Auditoria Master Concluída para " + nome_paciente)
-    else:
-        st.info("Aguardando ativação de módulo no painel lateral.")
