@@ -14,14 +14,14 @@ from fpdf import FPDF
 from gtts import gTTS 
 from duckduckgo_search import DDGS  
 import plotly.graph_objects as go 
-import hashlib # NOVO: Para criptografia de senhas
+import hashlib 
 from engine import * 
 
 # --- DNA NEXUS SENTINEL ESTRUTURA INTEGRADA (INTOCÁVEL) ---
 
 def orquestrador_inteligencia(contexto):
     especialistas = ["Segurança", "Performance", "UX", "Dev", "QA", "Jurídico", "Hacker Ético"]
-    with st.status(f"🧬 Orquestrador v7.0: Sincronizando Especialistas...", expanded=False) as status:
+    with st.status(f"🧬 Orquestrador v7.1: Sincronizando Especialistas...", expanded=False) as status:
         time.sleep(0.5)
         status.update(label="Sincronização Sentinel Concluída", state="complete")
     return True
@@ -41,13 +41,12 @@ def init_db_multiplayer():
     c.execute('''CREATE TABLE IF NOT EXISTS diagnosticos 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, medico_id TEXT, paciente TEXT, 
                   modulo TEXT, data TEXT, score_estresse REAL, parecer TEXT)''')
-    # NOVO: Tabela de Usuários para Login Seguro
     c.execute('''CREATE TABLE IF NOT EXISTS usuarios 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT UNIQUE, senha TEXT)''')
     conn.commit()
     conn.close()
 
-# --- NOVO: SISTEMA DE AUTENTICAÇÃO SEGURA (SNIPER v7.0) ---
+# --- SISTEMA DE AUTENTICAÇÃO SEGURA (CORREÇÃO SNIPER v7.1) ---
 
 def gerar_hash(senha):
     return hashlib.sha256(str.encode(senha)).hexdigest()
@@ -58,14 +57,15 @@ def realizar_login():
 
     if not st.session_state["autenticado"]:
         st.markdown("<h1 style='text-align: center;'>🛡️ GENESIS LOGIN</h1>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns()
+        # CORREÇÃO APLICADA: st.columns(3) para evitar o erro positional argument
+        col1, col2, col3 = st.columns(3) 
         with col2:
             with st.form("login_form"):
                 user = st.text_input("Usuário Profissional")
                 pw = st.text_input("Senha Sentinel", type="password")
                 if st.form_submit_button("Acessar Sistema"):
-                    # Lógica de validação (Para o primeiro acesso, criamos o usuário admin)
-                    if user == "admin" and pw == "genesis2026": # Credenciais Padrão
+                    # Credenciais Padrão: admin / genesis2026
+                    if user == "admin" and pw == "genesis2026":
                         st.session_state["autenticado"] = True
                         st.session_state["medico_id"] = user
                         st.rerun()
@@ -74,9 +74,9 @@ def realizar_login():
         return False
     return True
 
-# --- INTERFACE DASHBOARD v7.0 ---
+# --- INTERFACE DASHBOARD v7.1 ---
 
-st.set_page_config(page_title="GENESIS FORENSIC AI v7.0", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="GENESIS FORENSIC AI v7.1", layout="wide", page_icon="🛡️")
 init_db_multiplayer()
 
 if realizar_login():
@@ -86,7 +86,7 @@ if realizar_login():
         .chat-box { background-color: #1f2937; padding: 20px; border-radius: 15px; border-left: 5px solid #3b82f6; margin-bottom: 20px; }
     </style>""", unsafe_allow_html=True)
 
-    st.title("🛡️ GENESIS FORENSIC AI v7.0")
+    st.title("🛡️ GENESIS FORENSIC AI v7.1")
 
     with st.sidebar:
         st.header("🔑 SESSÃO ATIVA")
@@ -122,7 +122,7 @@ if realizar_login():
                     orquestrador_inteligencia("Super IA")
                     st.info(f"Análise processada para {nome_paciente}. Conteúdo integrado à base mundial.")
 
-    # --- MÓDULOS DE IMAGEM (ESTRUTURA ADITIVA v7.0) ---
+    # --- MÓDULOS DE IMAGEM (ESTRUTURA ADITIVA) ---
 
     def renderizar_modulo_v6(label):
         st.subheader(f"Estação {label} | Operador: {st.session_state['medico_id']}")
@@ -131,7 +131,7 @@ if realizar_login():
         with col_input:
             f = st.radio("Fonte", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key=label)
             ent = st.camera_input("Scanner Sentinel") if "📸" in f else st.file_uploader("Importar", type=['jpg','png','jpeg'])
-            zoom_on = st.checkbox("🔍 Ativar Zoom Digital Inteligente")
+            zoom_on = st.checkbox("🔍 Ativar Zoom Digital Inteligente", key=label+"zoom")
         
         if ent:
             img_raw = Image.open(ent)
@@ -142,7 +142,7 @@ if realizar_login():
             
             with col_result:
                 st.image(img_hd, caption=f"Captura Ultra-HD | Brilho: {int(brilho)} LUX", use_container_width=True)
-                if st.button(f"⚡ ANALISAR {label.upper()}", type="primary"):
+                if st.button(f"⚡ ANALISAR {label.upper()}", type="primary", key=label+"analisar"):
                     orquestrador_inteligencia(label)
                     res = motor_diagnostico_genesis(img_hd, label)
                     st.metric("Densidade Forense", res['densidade'])
