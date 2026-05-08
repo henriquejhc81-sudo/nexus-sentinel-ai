@@ -10,3 +10,6 @@ opencv-python-headless
 numpy
 fpdf2
 gTTS
+plotly
+sqlalchemy
+streamlit-drawable-canvas
