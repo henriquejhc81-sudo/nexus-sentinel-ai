@@ -15,14 +15,13 @@ from gtts import gTTS
 from duckduckgo_search import DDGS  
 import plotly.graph_objects as go 
 import hashlib 
-# --- IMPORTAÇÃO COMPLETA DA ENGINE ---
 from engine import *
 
 # --- DNA NEXUS SENTINEL ESTRUTURA INTEGRADA (INTOCÁVEL) ---
 
 def orquestrador_inteligencia(contexto):
     especialistas = ["Segurança", "Performance", "UX", "Dev", "QA", "Jurídico", "Hacker Ético"]
-    with st.status(f"🧬 Orquestrador v9.1: Validando Protocolos...", expanded=True) as status:
+    with st.status(f"🧬 Orquestrador v9.2: Sincronizando Especialistas...", expanded=True) as status:
         time.sleep(0.5)
         status.update(label="Sincronização Sentinel Concluída", state="complete")
     return True
@@ -57,29 +56,31 @@ def realizar_login():
         return False
     return True
 
-def gerar_pdf_impressao(paciente, modulo, laudo_texto):
+def gerar_pdf_impressao(paciente, modulo, laudo_res):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, "GENESIS FORENSIC AI - RELATÓRIO MASTER", ln=True, align='C')
     pdf.ln(10)
     pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(0, 10, laudo_texto.encode('latin-1', 'replace').decode('latin-1'))
+    texto = f"Paciente: {paciente}\nModulo: {modulo}\n\nAnalise: {laudo_res['explicacao']}\n\nConclusao: {laudo_res['conclusao']}\n\n{laudo_res['nota_legal']}"
+    pdf.multi_cell(0, 10, texto.encode('latin-1', 'replace').decode('latin-1'))
     return pdf.output(dest='S').encode('latin-1')
 
-# --- INTERFACE DASHBOARD v9.1 ---
+# --- INTERFACE DASHBOARD v9.2 ---
 
-st.set_page_config(page_title="GENESIS MASTER v9.1", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="GENESIS MASTER v9.2", layout="wide", page_icon="🛡️")
 init_db_multiplayer()
 
 if realizar_login():
     st.markdown("""<style>
         .main { background-color: #0e1117; }
         .report-card { background-color: #111827; padding: 25px; border-radius: 15px; border-left: 8px solid #3b82f6; margin-top: 20px; }
+        .legal-note { background-color: #1a202c; padding: 15px; border-radius: 8px; font-size: 0.9rem; color: #a0aec0; border: 1px solid #2d3748; margin-top: 20px; }
         .diagnosis-text { font-size: 1.05rem; color: #e5e7eb; line-height: 1.6; }
     </style>""", unsafe_allow_html=True)
 
-    st.title("🛡️ GENESIS FORENSIC AI v9.1")
+    st.title("🛡️ GENESIS FORENSIC AI v9.2")
 
     with st.sidebar:
         st.header("👤 PRONTUÁRIO")
@@ -112,11 +113,19 @@ if realizar_login():
                     orquestrador_inteligencia(label)
                     res_tec = motor_diagnostico_genesis(img_hd, label)
                     res_m = gerar_diagnostico_master(label, res_tec)
+                    
                     st.markdown(f"""<div class="report-card">
                         <h2 style="color:#3b82f6;">🧬 {res_m['titulo']}</h2>
-                        <p class="diagnosis-text">{res_m['explicacao']}</p>
+                        <p class="diagnosis-text"><b>ANÁLISE INTEGRAL:</b> {res_m['explicacao']}</p>
+                        <p class="diagnosis-text"><b>FISIOLOGIA:</b> {res_m['fisiologia']}</p>
+                        <p class="diagnosis-text" style="color:#22c55e;"><b>🎯 CONCLUSÃO:</b> {res_m['conclusao']}</p>
+                        <div class="legal-note">{res_m['nota_legal'].replace('\n', '<br>')}</div>
                     </div>""", unsafe_allow_html=True)
-                    st.image(res_tec['viz'], caption="Visão Multiespectral", width=400)
+                    
+                    st.image(res_tec['viz'], caption="Visão Multiespectral de Contraste", width=400)
+                    
+                    pdf_b = gerar_pdf_impressao(nome_paciente, label, res_m)
+                    st.download_button("🖨️ IMPRIMIR RELATÓRIO COMPLETO", pdf_b, file_name=f"genesis_{label}.pdf")
 
     if m_iri: renderizar_modulo_master("Iridologia")
     elif m_der: renderizar_modulo_master("Dermatologia")
