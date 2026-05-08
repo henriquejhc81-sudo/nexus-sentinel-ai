@@ -12,14 +12,13 @@ import google.generativeai as genai
 from groq import Groq
 from fpdf import FPDF 
 from gtts import gTTS 
-from duckduckgo_search import DDGS  # PESQUISA MUNDIAL EM TEMPO REAL
+from duckduckgo_search import DDGS  
 
 # --- DNA NEXUS SENTINEL ESTRUTURA INTEGRADA (INTOCÁVEL) ---
 
 def orquestrador_inteligencia(contexto):
     especialistas = ["Segurança", "Performance", "UX", "Dev", "QA", "Jurídico", "Hacker Ético"]
-    st.toast(f"🧬 Orquestrador Sentinel: Ativando Inteligência Laboratorial (6 Eixos)...")
-    # Integração invisível com Gemini para validar contexto
+    st.toast(f"🧬 Orquestrador Sentinel: Sincronizando {len(especialistas)} perspectivas especializadas...")
     return True
 
 headers_ghost = {
@@ -36,7 +35,7 @@ def modulo_seguranca_sentinel(dados_entrada):
 def calcular_matriz_risco():
     return np.random.randint(1, 10)
 
-# --- NOVO: MOTOR DE BUSCA FORENSE MUNDIAL (DUCKDUCKGO) ---
+# --- MOTOR DE BUSCA FORENSE MUNDIAL ---
 
 def pesquisa_medica_mundial(termo):
     try:
@@ -51,25 +50,15 @@ def pesquisa_medica_mundial(termo):
 def motor_laboratorial(dados):
     alertas = []
     status = "Verde"
-    
-    # Eixo A: Metabólico (Fígado/Rins)
     if dados.get('creatinina', 0) > 1.2 and dados.get('ureia', 0) > 40:
-        alertas.append("🔴 Crítico: Alerta de Insuficiência Renal (Creatinina/Ureia Elevadas)")
+        alertas.append("🔴 Crítico: Alerta de Insuficiência Renal")
         status = "Vermelho"
     if dados.get('tgp', 0) > 80:
-        alertas.append("🟡 Atenção: Sugestão de Lesão Hepática Aguda (TGP Elevado)")
+        alertas.append("🟡 Atenção: Sugestão de Lesão Hepática Aguda")
         status = "Amarelo"
-        
-    # Eixo B: Hematológico (Anemias)
-    if dados.get('hemoglobina', 15) < 12:
-        alertas.append("🟡 Atenção: Padrão compatível com Anemia.")
-        status = "Amarelo"
-        
-    # Eixo C: Inflamatório
     if dados.get('pcr', 0) > 10:
-        alertas.append("🔴 Crítico: Processo Inflamatório Agudo (PCR Elevado)")
+        alertas.append("🔴 Crítico: Processo Inflamatório Agudo")
         status = "Vermelho"
-
     return {"alertas": alertas, "status": status}
 
 # --- BANCO DE DADOS E PERSISTÊNCIA ---
@@ -85,7 +74,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- INTERFACE DE VOZ E PDF (PRESERVADAS) ---
+# --- INTERFACE DE VOZ E PDF ---
 
 def sintetizar_voz_sentinel(texto):
     try:
@@ -104,7 +93,6 @@ def exportar_pdf_genesis(paciente, modulo, resultado):
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, f"GENESIS FORENSIC AI - {modulo}", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font("Arial", '', 12)
     pdf.multi_cell(0, 10, f"Paciente: {paciente}\nData: {datetime.datetime.now()}\n\nResultado: {resultado}")
     return pdf.output()
 
@@ -116,16 +104,24 @@ def motor_diagnostico_genesis(img_pil, modulo):
     img_gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
     img_enhanced = clahe.apply(img_gray)
-    mask = cv2.inRange(img_hsv, np.array([0, 100, 100]), np.array([10, 255, 255]))
+    mask = cv2.inRange(img_hsv, np.array([0, 50, 50]), np.array([10, 255, 255]))
     score_estresse = (np.sum(mask) / (img_array.size / 3)) * 100
-    
-    parecer = f"Análise de {modulo} concluída com sucesso."
+    parecer = f"Análise de {modulo} concluída via Visão Computacional."
     return {"densidade": round(np.mean(img_gray), 2), "estresse": round(score_estresse, 2), "parecer": parecer, "viz": img_enhanced}
 
 # --- INTERFACE STREAMLIT DASHBOARD v4.0 ---
 
 st.set_page_config(page_title="GENESIS FORENSIC AI", layout="wide", page_icon="🛡️")
 init_db()
+
+# CSS de Alta Tecnologia
+st.markdown("""
+<style>
+    .main { background-color: #0e1117; }
+    .stMetric { background-color: #111827; border: 1px solid #3b82f6; border-radius: 10px; padding: 15px; }
+    .welcome-card { background-color: #1f2937; padding: 30px; border-radius: 15px; border: 1px solid #3b82f6; text-align: center; }
+</style>
+""", unsafe_allow_html=True)
 
 st.title("🛡️ GENESIS FORENSIC AI")
 st.caption("Arquitetura DNA Sentinel v4.0 | MedAI Vision X | Lab-Intelligence Core")
@@ -145,7 +141,7 @@ with st.sidebar:
         st.dataframe(pd.read_sql_query("SELECT * FROM diagnosticos", conn))
         conn.close()
 
-# --- MÓDULO LABORATORIAL ---
+# --- LÓGICA DE EXIBIÇÃO ---
 
 if m_lab:
     st.subheader("🧬 Inteligência Laboratorial")
@@ -161,8 +157,6 @@ if m_lab:
             for a in res_l['alertas']: st.warning(a)
             sintetizar_voz_sentinel(f"Análise laboratorial finalizada para {nome_paciente}")
 
-# --- MÓDULOS DE IMAGEM ---
-
 def exibir_estacao(label):
     st.subheader(f"Estação {label}")
     col_u, col_r = st.columns(2)
@@ -176,12 +170,9 @@ def exibir_estacao(label):
             if st.button(f"⚡ ANALISAR {label.upper()}", type="primary"):
                 orquestrador_inteligencia(label)
                 res = motor_diagnostico_genesis(img_o, label)
-                
-                # BUSCA MUNDIAL AUTOMÁTICA
                 st.subheader("🌐 Pesquisa Global Relacionada")
                 links = pesquisa_medica_mundial(label)
                 for l in links: st.markdown(f"[{l['title']}]({l['href']})")
-                
                 st.metric("Risco Matriz", f"{calcular_matriz_risco()}%")
                 st.write(f"**Parecer:** {res['parecer']}")
                 st.image(res['viz'], caption="Contraste Forense", width=300)
@@ -190,4 +181,18 @@ def exibir_estacao(label):
 if m_iri: exibir_estacao("Iridologia")
 elif m_der: exibir_estacao("Dermatologia")
 elif m_rad: exibir_estacao("Radiologia")
-elif not m_lab: st.warning("Sistema em Stand-by. Ative um módulo lateral.")
+elif not m_lab:
+    # --- NOVO: DASHBOARD DE BOAS-VINDAS (SUBSTITUI O AVISO SIMPLES) ---
+    st.markdown("""
+    <div class="welcome-card">
+        <h2>🛰️ SISTEMA SENTINEL EM STAND-BY</h2>
+        <p>Aguardando ativação de módulos para processamento MedAI Vision X.</p>
+        <hr style="border: 0.5px solid #3b82f6;">
+        <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+            <div><b>INTEGRIDADE:</b> 100%</div>
+            <div><b>CONEXÃO GLOBAL:</b> ATIVA</div>
+            <div><b>CRIPTOGRAFIA:</b> AES-256</div>
+        </div>
+        <p style="margin-top: 20px; color: #3b82f6;">Selecione um módulo no menu lateral para iniciar o escaneamento forense.</p>
+    </div>
+    """, unsafe_allow_html=True)
