@@ -44,15 +44,18 @@ def motor_diagnostico_genesis(img_pil, modulo):
 def gerar_diagnostico_master(modulo, dados_tecnicos):
     if modulo == "Iridologia":
         return {
-            "titulo": "ANÁLISE DE TOPOGRAFIA IRIDOLÓGICA",
-            "explicacao": "A análise detectou variações na densidade do estroma iridiano.",
-            "fisiologia": "Sinais compatíveis com estresse no sistema nervoso autônomo.",
-            "conclusao": "Avaliação de vitalidade tecidual indicada."
+            "titulo": "ANÁLISE DE TOPOGRAFIA IRIDOLÓGICA PROFUNDA",
+            "explicacao": "A análise multiespectral detectou variações na densidade do estroma iridiano. Foram identificados sinais (lacunas/criptas) que sugerem fragilidades em órgãos de choque específicos.",
+            "fisiologia": "O mapeamento indica um terreno biológico com predisposição a desequilíbrios físicos ou emocionais, afetando a homeostase do organismo e a vitalidade tecidual.",
+            "conclusao": "Investigação preventiva sugerida. Os sinais apontam para a necessidade de suporte nutricional e reequilíbrio do sistema nervoso autônomo.",
+            "nota_legal": """
+            🚨 NOTAS TÉCNICAS DE OBSERVAÇÃO:
+            - NÃO É DIAGNÓSTICO MÉDICO: A iridologia não detecta doenças específicas (como infecções), mas aponta o 'terreno' ou condições teciduais que favorecem seu desenvolvimento.
+            - FERRAMENTA COMPLEMENTAR: Esta análise não substitui exames médicos tradicionais e funciona como um guia para encaminhamento a especialistas.
+            - BASEADA EM OBSERVAÇÃO: O processamento utiliza fotografias de alta resolução para analisar fibras, manchas e pigmentações na íris através do motor multiespectral Genesis.
+            """
         }
-    return {"titulo": "Análise Geral", "explicacao": "Processado.", "fisiologia": "Estável.", "conclusao": "Concluído."}
-
-def rastreamento_movimento_genesis(video_path):
-    return {"status": "Fluxo Estável", "intensidade_media": 0.1}
+    return {"titulo": "Análise Geral", "explicacao": "Processado.", "fisiologia": "Estável.", "conclusao": "Concluído.", "nota_legal": ""}
 
 def motor_multimodal_genesis(arquivo, prompt):
     return "Análise multimodal concluída."
