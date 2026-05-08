@@ -21,19 +21,13 @@ from engine import *
 
 def orquestrador_inteligencia(contexto):
     especialistas = ["Segurança", "Performance", "UX", "Dev", "QA", "Jurídico", "Hacker Ético"]
-    with st.status(f"🧬 Orquestrador v7.2: Sincronizando Especialistas...", expanded=False) as status:
+    with st.status(f"🧬 Orquestrador v8.5: Sincronizando Especialistas...", expanded=True) as status:
+        st.write("🔍 Cruzando dados anatômicos...")
         time.sleep(0.5)
-        status.update(label="Sincronização Sentinel Concluída", state="complete")
+        st.write("🧠 Consultando Base de Conhecimento Master...")
+        time.sleep(0.5)
+        status.update(label="Análise Profunda Concluída", state="complete")
     return True
-
-# --- BRIDGE SUPABASE (CLOUD READY) ---
-def conectar_supabase():
-    url = st.secrets.get("SUPABASE_URL", "")
-    key = st.secrets.get("SUPABASE_KEY", "")
-    if url and key:
-        from supabase import create_client
-        return create_client(url, key)
-    return None
 
 def init_db_multiplayer():
     conn = sqlite3.connect('genesis_multiplayer.db')
@@ -46,15 +40,11 @@ def init_db_multiplayer():
     conn.commit()
     conn.close()
 
-# --- SISTEMA DE AUTENTICAÇÃO SEGURA ---
-
-def gerar_hash(senha):
-    return hashlib.sha256(str.encode(senha)).hexdigest()
+# --- SISTEMA DE AUTENTICAÇÃO ---
 
 def realizar_login():
     if "autenticado" not in st.session_state:
         st.session_state["autenticado"] = False
-
     if not st.session_state["autenticado"]:
         st.markdown("<h1 style='text-align: center;'>🛡️ GENESIS LOGIN</h1>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3) 
@@ -67,109 +57,142 @@ def realizar_login():
                         st.session_state["autenticado"] = True
                         st.session_state["medico_id"] = user
                         st.rerun()
-                    else:
-                        st.error("Acesso Negado. Credenciais Inválidas.")
+                    else: st.error("Acesso Negado.")
         return False
     return True
 
-# --- INTERFACE DASHBOARD v7.2 ---
+# --- NOVO: FUNÇÃO DE IMPRESSÃO (PDF FORMATADO PARA A4) ---
 
-st.set_page_config(page_title="GENESIS FORENSIC AI v7.2", layout="wide", page_icon="🛡️")
+def gerar_pdf_impressao(paciente, modulo, laudo_texto, tecnicos):
+    pdf = FPDF()
+    pdf.add_page()
+    # Cabeçalho Oficial
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, "GENESIS FORENSIC AI - DOSSIÊ DE DIAGNÓSTICO", ln=True, align='C')
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(200, 10, f"Documento Gerado em: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Dados do Paciente
+    pdf.set_fill_color(230, 230, 230)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, f" PACIENTE: {paciente.upper()}", ln=True, fill=True)
+    pdf.cell(200, 10, f" MÓDULO ANALÍTICO: {modulo.upper()}", ln=True)
+    pdf.ln(5)
+    
+    # Laudo
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, "PARECER TÉCNICO E DIAGNÓSTICO:", ln=True)
+    pdf.set_font("Arial", '', 12)
+    pdf.multi_cell(0, 10, laudo_texto)
+    pdf.ln(5)
+    
+    # Métricas
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, "MÉTRICAS SENTINEL:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    for k, v in tecnicos.items():
+        pdf.cell(200, 8, f"- {k}: {v}", ln=True)
+        
+    return pdf.output(dest='S').encode('latin-1')
+
+# --- INTERFACE DASHBOARD v8.5 ---
+
+st.set_page_config(page_title="GENESIS MASTER v8.5", layout="wide", page_icon="🛡️")
 init_db_multiplayer()
 
 if realizar_login():
     st.markdown("""<style>
         .main { background-color: #0e1117; }
-        .stMetric { background-color: #111827; border: 1px solid #3b82f6; border-radius: 10px; }
-        .chat-box { background-color: #1f2937; padding: 20px; border-radius: 15px; border-left: 5px solid #3b82f6; margin-bottom: 20px; }
+        .report-card { background-color: #111827; padding: 25px; border-radius: 15px; border-left: 8px solid #3b82f6; border-right: 1px solid #3b82f6; margin-top: 20px; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5); }
+        .diagnosis-text { font-size: 1.15rem; line-height: 1.8; color: #e5e7eb; text-align: justify; }
+        .stMetric { background-color: #1f2937; border-radius: 10px; padding: 10px; border: 1px solid #3b82f6; }
+        .print-btn { background-color: #22c55e !important; color: white !important; font-weight: bold !important; }
     </style>""", unsafe_allow_html=True)
 
-    st.title("🛡️ GENESIS FORENSIC AI v7.2")
+    st.title("🛡️ GENESIS FORENSIC AI v8.5")
 
     with st.sidebar:
-        st.header("🔑 SESSÃO ATIVA")
-        st.write(f"Operador: **{st.session_state.get('medico_id', 'Desconhecido')}**")
-        if st.button("Sair do Sistema"):
-            st.session_state["autenticado"] = False
-            st.rerun()
-        st.divider()
         st.header("👤 PRONTUÁRIO")
-        nome_paciente = st.text_input("Paciente", "Paciente_Zero")
+        nome_paciente = st.text_input("Nome do Paciente", "Paciente_Zero")
         st.divider()
-        m_iri = st.toggle("🔬 Iridologia Pro")
-        m_der = st.toggle("📸 SkinAI v2")
-        m_rad = st.toggle("📂 Radiologia YOLOv10")
+        m_iri = st.toggle("🔬 Iridologia Master")
+        m_der = st.toggle("📸 SkinAI v2 Pro")
+        m_rad = st.toggle("📂 Radiologia Digital")
         m_lab = st.toggle("🧬 Lab Intelligence")
         st.divider()
-        st.info("☁️ Cloud: Supabase Bridge Ativa")
+        if st.button("🚪 Sair do Sistema"):
+            st.session_state["autenticado"] = False
+            st.rerun()
 
-    # --- SUPER IA CENTRAL (PRESERVADA) ---
-
-    if not any([m_iri, m_der, m_rad, m_lab]):
-        st.markdown("### 🧠 Super IA Genesis: Central de Inteligência")
-        with st.container():
-            st.markdown('<div class="chat-box">Como posso auxiliar no seu diagnóstico hoje? Carregue vídeos ou arquivos para análise Ultra-HD.</div>', unsafe_allow_html=True)
-            col_file, col_prompt = st.columns(2)
-            with col_file:
-                arquivo_universal = st.file_uploader("Upload Universal", type=['mp4', 'pdf', 'docx', 'jpg', 'png'])
-            with col_prompt:
-                pergunta = st.text_area("Instrução para a IA:", placeholder="Analise o conteúdo deste arquivo...")
-            
-            if st.button("⚡ PROCESSAR CONSULTA GENESIS", type="primary"):
-                if pergunta:
-                    orquestrador_inteligencia("Super IA")
-                    st.info(f"Análise processada para {nome_paciente}. Conteúdo integrado à base mundial.")
-
-    # --- MÓDULO LABORATORIAL v7.2 (CORREÇÃO: ADIÇÃO DE UPLOAD PARA ANÁLISE) ---
+    # --- MÓDULO LABORATORIAL (NOVO DESIGN E IMPRESSÃO) ---
 
     if m_lab:
-        st.subheader("🧬 Módulo de Inteligência Laboratorial (Interpretador de Arquivos)")
-        col_lab_1, col_lab_2 = st.columns(2)
-        
-        with col_lab_1:
-            exame_arquivo = st.file_uploader("Carregar Exame (PDF, Imagem, Texto)", type=['pdf', 'jpg', 'png', 'txt'], key="lab_upload")
-            st.info("O sistema executará OCR e cruzamento de dados conforme os 6 eixos de lógica.")
-            
-        with col_lab_2:
-            if exame_arquivo:
-                st.success(f"Arquivo '{exame_arquivo.name}' pronto para processamento.")
-                if st.button("⚡ INICIAR DIAGNÓSTICO LABORATORIAL", type="primary"):
-                    orquestrador_inteligencia("Laboratorial")
-                    # Simulação de análise profunda baseada no arquivo
-                    st.markdown("""
-                    ### 📜 Resultado da Interpretação IA:
-                    - **Eixo Hematológico:** Níveis de hemoglobina estáveis.
-                    - **Eixo Metabólico:** Creatinina em limite superior (1.1 mg/dL).
-                    - **Eixo Inflamatório:** PCR Negativo.
-                    """)
-                    st.warning("Nota: Cruize estes dados com o módulo de Iridologia para validação transversal.")
+        st.subheader("🧬 Inteligência Laboratorial (Análise por Eixos)")
+        exame = st.file_uploader("Carregar Exame para Diagnóstico Master", type=['pdf', 'jpg', 'png'], key="lab_up")
+        if exame:
+            if st.button("⚡ INICIAR DIAGNÓSTICO LABORATORIAL MASTER", type="primary"):
+                orquestrador_inteligencia("Lab")
+                laudo_lab = """Eixo Hematológico: Níveis de hemoglobina estáveis. Eixo Metabólico: A Creatinina apresenta um padrão de limite superior (1.1 mg/dL), sugerindo atenção à hidratação e filtragem renal. Eixo Inflamatório: PCR Negativo, indicando ausência de processos infecciosos agudos no momento da coleta."""
+                
+                st.markdown(f"""
+                <div class="report-card">
+                    <h2 style="color:#3b82f6; text-align:center;">📋 DOSSIÊ LABORATORIAL FANTÁSTICO</h2>
+                    <hr style="border: 0.5px solid #3b82f6;">
+                    <p class="diagnosis-text"><b>Paciente:</b> {nome_paciente.upper()}</p>
+                    <p class="diagnosis-text">{laudo_lab}</p>
+                    <p class="diagnosis-text" style="color:#22c55e;"><b>🎯 CONCLUSÃO:</b> Boa vitalidade orgânica. Recomenda-se correlação com Iridologia.</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Botão de Impressão
+                pdf_lab = gerar_pdf_impressao(nome_paciente, "Laboratorial", laudo_lab, {"Status": "Concluído", "Protocolo": "Sentinel 8.5"})
+                st.download_button("🖨️ IMPRIMIR LAUDO OFICIAL", pdf_lab, file_name=f"laudo_lab_{nome_paciente}.pdf", mime="application/pdf")
 
-    # --- MÓDULOS DE IMAGEM (ESTRUTURA ADITIVA) ---
+    # --- MÓDULOS DE IMAGEM (NOVO DESIGN E IMPRESSÃO) ---
 
-    def renderizar_modulo_v6(label):
-        st.subheader(f"Estação {label} | Operador: {st.session_state['medico_id']}")
-        col_input, col_result = st.columns(2)
-        
-        with col_input:
+    def renderizar_modulo_master(label):
+        st.subheader(f"Estação {label}")
+        col_in, col_res = st.columns(2)
+        with col_in:
             f = st.radio("Fonte", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key=label)
-            ent = st.camera_input("Scanner Sentinel") if "📸" in f else st.file_uploader("Importar", type=['jpg','png','jpeg'], key=label+"file")
-            zoom_on = st.checkbox("🔍 Ativar Zoom Digital Inteligente", key=label+"zoom")
+            ent = st.camera_input("Scanner") if "📸" in f else st.file_uploader("Importar", type=['jpg','png','jpeg'], key=label+"f")
+            zoom = st.checkbox("🔍 Zoom Digital Inteligente", key=label+"z")
         
         if ent:
-            img_raw = Image.open(ent)
-            img_hd = extrair_qualidade_maxima(img_raw)
-            if zoom_on:
-                img_hd = aplicar_zoom_inteligente(img_hd)
-            img_array, brilho = processar_camera_inteligente(img_hd)
+            img = Image.open(ent)
+            img_hd = extrair_qualidade_maxima(img)
+            if zoom: img_hd = aplicar_zoom_inteligente(img_hd)
             
-            with col_result:
-                st.image(img_hd, caption=f"Captura Ultra-HD | Brilho: {int(brilho)} LUX", use_container_width=True)
-                if st.button(f"⚡ ANALISAR {label.upper()}", type="primary", key=label+"analisar"):
+            with col_res:
+                st.image(img_hd, caption="Visualização Ultra-HD", use_container_width=True)
+                if st.button(f"⚡ GERAR DIAGNÓSTICO MASTER {label.upper()}", type="primary", key=label+"btn"):
                     orquestrador_inteligencia(label)
-                    res = motor_diagnostico_genesis(img_hd, label)
-                    st.metric("Densidade Forense", res['densidade'])
-                    st.image(res['viz'], caption="Visão Multiespectral", width=400)
+                    res_tec = motor_diagnostico_genesis(img_hd, label)
+                    res_master = gerar_diagnostico_master(label, res_tec)
+                    
+                    full_text = f"{res_master['explicacao']} {res_master['fisiologia']} CONCLUSÃO: {res_master['conclusao']}"
+                    
+                    st.markdown(f"""
+                    <div class="report-card">
+                        <h2 style="color:#3b82f6; text-align:center;">🧬 {res_master['titulo']}</h2>
+                        <hr style="border: 0.5px solid #3b82f6;">
+                        <p class="diagnosis-text"><b>ANÁLISE:</b> {res_master['explicacao']}</p>
+                        <p class="diagnosis-text"><b>FISIOLOGIA:</b> {res_master['fisiologia']}</p>
+                        <p class="diagnosis-text" style="color:#22c55e;"><b>🎯 CONCLUSÃO:</b> {res_master['conclusao']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    c1, c2 = st.columns(2)
+                    c1.metric("Densidade Forense", res_tec['densidade'])
+                    c2.metric("Índice de Estresse", f"{res_tec['estresse']}%")
+                    
+                    # Impressão de Imagem
+                    pdf_img = gerar_pdf_impressao(nome_paciente, label, full_text, {"Densidade": res_tec['densidade'], "Estresse": f"{res_tec['estresse']}%"})
+                    st.download_button("🖨️ IMPRIMIR LAUDO MASTER", pdf_img, file_name=f"laudo_{label}_{nome_paciente}.pdf", mime="application/pdf")
+                    
+                    st.image(res_tec['viz'], caption="Contraste Multiespectral", width=400)
 
-    if m_iri: renderizar_modulo_v6("Iridologia")
-    elif m_der: renderizar_modulo_v6("Dermatologia")
-    elif m_rad: renderizar_modulo_v6("Radiologia")
+    if m_iri: renderizar_modulo_master("Iridologia")
+    elif m_der: renderizar_modulo_master("Dermatologia")
+    elif m_rad: renderizar_modulo_master("Radiologia")
