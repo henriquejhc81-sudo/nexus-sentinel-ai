@@ -6,6 +6,7 @@ pandas>=2.0.0
 openpyxl>=3.1.0
 groq
 duckduckgo_search
-docx2txtstreamlit
 opencv-python-headless
 numpy
+fpdf2
+gTTS
