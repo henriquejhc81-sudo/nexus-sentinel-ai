@@ -3,80 +3,58 @@ import cv2
 import numpy as np
 from PIL import Image
 import time
-import io
 import datetime
-import sqlite3  
 import base64
-import pandas as pd
 from fpdf import FPDF 
-from gtts import gTTS 
-from engine import * # CONEXÃO TOTAL COM O CÉREBRO
+from engine import * 
 
-# --- DNA NEXUS SENTINEL ESTRUTURA INTEGRADA (INTOCÁVEL) ---
-def orquestrador_inteligencia(contexto):
-    with st.status(f"🧬 Orquestrador v9.9: Sincronizando IAs e Especialistas...", expanded=True) as s:
-        st.write("🔍 Varrendo Metadados Forenses..."); time.sleep(0.5)
-        st.write("🧠 Cruzando Dados MedAI Vision X..."); time.sleep(0.5)
-        s.update(label="Sincronização Sentinel Concluída", state="complete")
-    return True
-
+# --- PROTOCOLO SENTINEL (INTOCÁVEL) ---
 def realizar_login():
     if "autenticado" not in st.session_state: st.session_state["autenticado"] = False
     if not st.session_state["autenticado"]:
         st.markdown("<h1 style='text-align:center;'>🛡️ GENESIS LOGIN</h1>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
+        c1, c2, c3 = st.columns(3)
         with col2:
-            with st.form("login_form"):
-                user = st.text_input("Usuário Profissional")
-                pw = st.text_input("Senha Sentinel", type="password")
+            with st.form("login"):
+                u = st.text_input("Usuário"); p = st.text_input("Senha", type="password")
                 if st.form_submit_button("Acessar"):
-                    if user == "admin" and pw == "genesis2026":
-                        st.session_state["autenticado"] = True; st.session_state["medico_id"] = user; st.rerun()
+                    if u == "admin" and p == "genesis2026":
+                        st.session_state["autenticado"] = True; st.session_state["medico_id"] = u; st.rerun()
                     else: st.error("Acesso Negado.")
         return False
     return True
 
-# --- INTERFACE MASTER v9.9 ---
-st.set_page_config(page_title="GENESIS OMEGA v9.9", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="GENESIS v11.0", layout="wide", page_icon="🛡️")
 
 if realizar_login():
     st.markdown("""<style>
-        .report-card { background-color: #111827; padding: 25px; border-radius: 15px; border-left: 8px solid #3b82f6; margin-top: 20px; }
-        .diagnosis-text { font-size: 1.1rem; line-height: 1.6; color: #e5e7eb; }
+        .report-card { background-color: #111827; padding: 30px; border-radius: 15px; border-left: 10px solid #3b82f6; margin-top: 25px; }
+        .section-header { color: #3b82f6; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; margin-top: 15px; border-bottom: 1px solid #334155; }
+        .diagnosis-text { font-size: 1.05rem; line-height: 1.6; color: #e5e7eb; padding: 10px 0; }
     </style>""", unsafe_allow_html=True)
 
-    st.title("🛡️ GENESIS FORENSIC AI v9.9")
+    st.title("🛡️ GENESIS FORENSIC AI v11.0")
 
     with st.sidebar:
-        st.header("👤 PRONTUÁRIO")
-        nome_paciente = st.text_input("Nome do Paciente", "henriue")
+        st.header("👤 PRONTUÁRIO MASTER")
+        nome_paciente = st.text_input("Identificação do Paciente", "henriue")
+        queixa_principal = st.text_area("Queixa Principal / Histórico", "Relato de estresse e fadiga...")
         st.divider()
-        m_super = st.toggle("🧠 Super IA Genesis", value=True)
-        m_iri = st.toggle("🔬 Iridologia Master")
+        m_super = st.toggle("🧠 Super IA Genesis")
+        m_iri = st.toggle("🔬 Iridologia Master", value=True)
         m_der = st.toggle("📸 SkinAI v2 Pro")
         m_rad = st.toggle("📂 Radiologia Digital")
         m_lab = st.toggle("🧬 Inteligência Laboratorial")
-        st.divider()
-        if st.button("🚪 Sair"): st.session_state["autenticado"] = False; st.rerun()
+        if st.button("Sair"): st.session_state["autenticado"] = False; st.rerun()
 
-    # --- LÓGICA DE EXIBIÇÃO: SUPER IA ---
-    if m_super and not any([m_iri, m_der, m_rad, m_lab]):
-        st.subheader("🧠 Central de Inteligência Multimodal")
-        arquivo = st.file_uploader("Upload de Vídeo/Arquivo para Rastreamento", type=['mp4', 'pdf', 'docx', 'png', 'jpg'])
-        pergunta = st.text_area("O que deseja que o Genesis analise?")
-        if st.button("Executar Consulta"): 
-            orquestrador_inteligencia("Super IA")
-            st.success(motor_multimodal_genesis(arquivo, pergunta))
-
-    # --- RENDERIZAÇÃO DOS MÓDULOS DE IMAGEM ---
-    def renderizar_modulo_master(label):
-        st.subheader(f"Estação {label} | Operador: {st.session_state['medico_id']}")
+    def renderizar_modulo_v11(label):
+        st.subheader(f"Estação de Auditoria: {label}")
         c1, c2 = st.columns(2)
         with c1:
             f = st.radio("Fonte", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key=label)
-            ent = st.camera_input("Scanner") if "📸" in f else st.file_uploader("Importar", type=['jpg','png','jpeg'], key=label+"up")
+            ent = st.camera_input("Capturar") if f == "📸 Câmera" else st.file_uploader("Importar", type=['jpg','png','jpeg'], key=label+"up")
             zoom = st.checkbox("🔍 Centralizar e Zoom Inteligente", value=True, key=label+"z")
-            map_on = st.checkbox("🗺️ Mapeamento Orgânico", key=label+"m") if label == "Iridologia" else False
+            map_on = st.checkbox("🗺️ Mapeamento Orgânico", value=True, key=label+"m") if label == "Iridologia" else False
 
         if ent:
             img = Image.open(ent)
@@ -85,28 +63,39 @@ if realizar_login():
             if map_on: img_hd = aplicar_mapa_iridologico(img_hd)
             
             with c2:
-                st.image(img_hd, caption="Visualização Ultra-HD Centralizada", use_container_width=True)
-                if st.button(f"⚡ GERAR RELATÓRIO MASTER {label.upper()}", type="primary", key=label+"bt"):
-                    orquestrador_inteligencia(label)
+                st.image(img_hd, caption="Registro Fotográfico de Alta Resolução", use_container_width=True)
+                if st.button(f"⚡ GERAR DOSSIÊ COMPLETO {label.upper()}", type="primary", key=label+"bt"):
                     res_tec = motor_diagnostico_genesis(img_hd, label)
-                    res_m = gerar_diagnostico_master_v98(label, res_tec)
+                    laudo = gerar_mega_laudo_iridologico(label, res_tec, queixa_principal, nome_paciente)
                     
                     st.markdown('<div class="report-card">', unsafe_allow_html=True)
-                    st.header(res_m['titulo'])
-                    for k, v in res_m['secoes'].items(): st.markdown(f"**{k}:** {v}")
-                    st.image(res_tec['viz'], caption="Visão Multiespectral", width=400)
+                    st.header(f"📋 {laudo['titulo']}")
                     
-                    # Sistema de Impressão PDF Blindado
-                    pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", 'B', 16); pdf.cell(200, 10, res_m['titulo'], ln=True)
-                    st.download_button("🖨️ IMPRIMIR LAUDO", pdf.output(dest='S'), file_name=f"laudo_{nome_paciente}.pdf", mime="application/pdf")
+                    for titulo, conteudo in laudo['eixos'].items():
+                        st.markdown(f"<div class='section-header'>{titulo}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='diagnosis-text'>{conteudo}</div>", unsafe_allow_html=True)
+                    
+                    st.image(res_tec['viz'], caption="Visão Multiespectral de Contraste (Detecção de Lacunas)", width=400)
+                    
+                    # --- SISTEMA DE IMPRESSÃO MASTER PDF ---
+                    pdf = FPDF()
+                    pdf.add_page(); pdf.set_font("Arial", 'B', 16)
+                    pdf.cell(200, 10, laudo['titulo'], ln=True, align='C')
+                    pdf.set_font("Arial", '', 11)
+                    full_txt = ""
+                    for k, v in laudo['eixos'].items(): full_txt += f"\n{k}:\n{v}\n"
+                    pdf.multi_cell(0, 10, full_txt.encode('latin-1', 'replace').decode('latin-1'))
+                    
+                    pdf_output = pdf.output(dest='S')
+                    if isinstance(pdf_output, str): pdf_output = pdf_output.encode('latin-1')
+                    
+                    st.download_button("🖨️ IMPRIMIR LAUDO OFICIAL", pdf_output, file_name=f"genesis_laudo_{nome_paciente}.pdf", mime="application/pdf")
                     st.markdown('</div>', unsafe_allow_html=True)
 
-    if m_iri: renderizar_modulo_master("Iridologia")
-    elif m_der: renderizar_modulo_master("Dermatologia")
-    elif m_rad: renderizar_modulo_master("Radiologia")
+    if m_iri: renderizar_modulo_v11("Iridologia")
+    elif m_der: renderizar_modulo_v11("Dermatologia")
+    elif m_rad: renderizar_modulo_v11("Radiologia")
     elif m_lab:
-        st.subheader("🧬 Auditoria Laboratorial")
-        exame = st.file_uploader("Upload", type=['pdf', 'jpg', 'png'])
-        if exame and st.button("⚡ AUDITORIA"): 
-            orquestrador_inteligencia("Lab")
-            st.success(f"Dossiê Master processado para {nome_paciente}.")
+        st.subheader("🧬 Inteligência Laboratorial")
+        exame = st.file_uploader("Upload do Exame", type=['pdf', 'jpg', 'png'])
+        if exame and st.button("⚡ AUDITORIA"): st.success("Dossiê processado.")
