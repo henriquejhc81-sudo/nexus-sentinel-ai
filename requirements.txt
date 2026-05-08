@@ -13,3 +13,4 @@ gTTS
 plotly
 sqlalchemy
 streamlit-drawable-canvas
+supabase
