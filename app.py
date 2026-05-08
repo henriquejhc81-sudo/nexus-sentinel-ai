@@ -20,7 +20,7 @@ from engine import *
 
 def orquestrador_inteligencia(contexto):
     especialistas = ["Segurança", "Performance", "UX", "Dev", "QA", "Jurídico", "Hacker Ético"]
-    with st.status(f"🧬 Orquestrador v5.0: Sincronizando Especialistas...", expanded=False) as status:
+    with st.status(f"🧬 Orquestrador v5.5: Sincronizando Especialistas...", expanded=False) as status:
         time.sleep(0.5)
         status.update(label="Sincronização Sentinel Concluída", state="complete")
     return True
@@ -64,13 +64,14 @@ with st.sidebar:
 # --- LÓGICA DE EXIBIÇÃO: SUPER IA vs MÓDULOS ---
 
 if not any([m_iri, m_der, m_rad, m_lab]):
-    # MÓDULO SUPER IA DE PERGUNTAS E RESPOSTAS (Substitui Stand-by)
     st.markdown("### 🧠 Super IA Genesis: Central de Inteligência")
     
     with st.container():
         st.markdown('<div class="chat-box">Como posso auxiliar no seu diagnóstico forense hoje? Carregue arquivos ou vídeos para análise profunda.</div>', unsafe_allow_html=True)
         
-        col_file, col_prompt = st.columns()
+        # --- CORREÇÃO SNIPER: Adicionado o argumento (2) em st.columns ---
+        col_file, col_prompt = st.columns(2) 
+        
         with col_file:
             arquivo_universal = st.file_uploader("Upload (Vídeo, PDF, Imagem, Docs)", type=['mp4', 'mov', 'avi', 'pdf', 'docx', 'jpg', 'png', 'csv'])
         with col_prompt:
@@ -80,18 +81,13 @@ if not any([m_iri, m_der, m_rad, m_lab]):
             if pergunta:
                 with st.spinner("IA Multimodal processando dados mundiais..."):
                     orquestrador_inteligencia("Super IA")
-                    # Chama o motor multimodal do engine.py
                     if arquivo_universal:
                         resultado_ia = motor_multimodal_genesis(arquivo_universal, pergunta)
                     else:
-                        resultado_ia = f"Análise conceitual para: '{pergunta}'. \nBaseado na biblioteca médica mundial, os sintomas sugerem..."
+                        resultado_ia = f"Análise conceitual para: '{pergunta}'. \nBaseado na biblioteca médica mundial..."
                     
                     st.success("Resposta da Super IA:")
                     st.write(resultado_ia)
-                    
-                    # Opção de Voz para a resposta da IA
-                    if st.button("🔊 Ouvir Análise"):
-                        sintetizar_voz_sentinel(resultado_ia)
             else:
                 st.warning("Por favor, digite uma pergunta para a IA.")
 
@@ -99,7 +95,7 @@ if not any([m_iri, m_der, m_rad, m_lab]):
 
 def renderizar_modulo_v5(label):
     st.subheader(f"Estação {label} | Operador: {medico_id}")
-    col_input, col_result = st.columns([1, 1.2])
+    col_input, col_result = st.columns(2) # --- CORREÇÃO SNIPER APLICADA AQUI TAMBÉM ---
     
     with col_input:
         f = st.radio("Fonte", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key=label)
