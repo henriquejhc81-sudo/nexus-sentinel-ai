@@ -8,22 +8,30 @@ import base64
 from fpdf import FPDF 
 from engine import * # IMPORTAÇÃO GLOBAL PROTEGIDA
 
-# --- NOVO MOTOR DE MAPEAMENTO (ADITIVO v13.0) ---
+# --- NOVO MOTOR DE MAPEAMENTO AMPLIADO (v13.0 - Base Jensen/Batelo) ---
 def obter_correlacao_bibliografica(hora, zona):
+    # Expansão completa para cobrir o mapa iridológico solicitado
     biblioteca = {
-        "12h": {"Zona 2 (Órgãos)": "Cérebro / Vitalidade", "Zona 1 (Estômago)": "Centro Digestivo"},
-        "2h-3h": {"Zona 2 (Órgãos)": "Fígado / Coração", "Zona 3 (Músculos)": "Região Torácica"},
-        "6h": {"Zona 1 (Estômago)": "Intestino Grosso", "Zona 7 (Pele)": "Anel de Eliminação"},
-        "9h": {"Zona 2 (Órgãos)": "Pulmões / Baço"}
+        "12h": {"Zona 1 (Estômago)": "Centro Vital / Estômago", "Zona 2 (Órgãos)": "Cérebro / Vitalidade"},
+        "1h":  {"Zona 2 (Órgãos)": "Face / Maxilar", "Zona 3 (Músculos)": "Garganta"},
+        "2h-3h": {"Zona 2 (Órgãos)": "Fígado (D) / Coração (E)", "Zona 3 (Músculos)": "Brônquios / Pleura"},
+        "4h":  {"Zona 2 (Órgãos)": "Pulmão Superior", "Zona 3 (Músculos)": "Tórax"},
+        "5h":  {"Zona 2 (Órgãos)": "Ombro / Braço", "Zona 4 (Esqueleto)": "Clavícula"},
+        "6h":  {"Zona 1 (Estômago)": "Intestino Grosso / Reto", "Zona 7 (Pele)": "Anel de Eliminação / Pele"},
+        "7h-8h": {"Zona 2 (Órgãos)": "Rins / Adrenais", "Zona 4 (Esqueleto)": "Pelve"},
+        "9h":  {"Zona 2 (Órgãos)": "Baço (E) / Fígado (D)", "Zona 3 (Músculos)": "Escápula"},
+        "10h": {"Zona 2 (Órgãos)": "Olho / Ouvido", "Zona 3 (Músculos)": "Pescoço"},
+        "11h": {"Zona 2 (Órgãos)": "Mastóide", "Zona 1 (Estômago)": "Esôfago"}
     }
     return biblioteca.get(hora, {}).get(zona, "Área Geral - Consultar Mapa de Jensen")
 
-# --- PROTOCOLO DE SEGURANÇA ---
+# --- PROTOCOLO DE SEGURANÇA (CORREÇÃO DE ERRO DE COLUNAS) ---
 def realizar_login():
     if "autenticado" not in st.session_state: st.session_state["autenticado"] = False
     if not st.session_state["autenticado"]:
         st.markdown("<h1 style='text-align:center;'>🛡️ GENESIS LOGIN</h1>", unsafe_allow_html=True)
-        c1, col2, c3 = st.columns() # Ajuste aqui para centralizar
+        # CORREÇÃO DA LINHA 26: Adicionado o número 3 para definir as colunas
+        c1, col2, c3 = st.columns(3) 
         with col2:
             with st.form("login"):
                 u = st.text_input("Usuário"); p = st.text_input("Senha", type="password")
@@ -56,7 +64,7 @@ if realizar_login():
         m_lab = st.toggle("🧬 Inteligência Laboratorial")
         if st.button("Sair"): st.session_state["autenticado"] = False; st.rerun()
 
-    # --- MÓDULO IRIDOLOGIA MASTER (CUSTOMIZADO v13.0) ---
+    # --- MÓDULO IRIDOLOGIA MASTER (MELHORADO v13.0) ---
     if m_iri:
         st.subheader("🔬 Estação Iridologia Master")
         c1, c2 = st.columns(2)
@@ -64,28 +72,25 @@ if realizar_login():
             f = st.radio("Fonte", ["📸 Câmera", "📁 Arquivo"], horizontal=True, key="iris_source")
             ent = st.camera_input("Scanner") if f == "📸 Câmera" else st.file_uploader("Importar Íris", type=['jpg','png','jpeg'], key="iris_up")
             
-            # Novos campos da sua sugestão (Tabela Sinais_Encont)
             st.markdown("---")
             st.markdown("### 📝 Registro de Sinais (Tabela de Jensen)")
             col_a, col_b = st.columns(2)
             with col_a:
                 olho_lado = st.selectbox("Olho", ["Direito (D)", "Esquerdo (E)"])
-                hora_iris = st.select_slider("Posição Horária", options=["12h", "1h", "2h-3h", "4h", "5h", "6h", "9h"])
+                hora_iris = st.select_slider("Posição Horária", options=["12h", "1h", "2h-3h", "4h", "5h", "6h", "7h-8h", "9h", "10h", "11h"])
             with col_b:
-                zona_iris = st.selectbox("Zona", ["Zona 1 (Estômago)", "Zona 2 (Órgãos)", "Zona 7 (Pele)"])
+                zona_iris = st.selectbox("Zona", ["Zona 1 (Estômago)", "Zona 2 (Órgãos)", "Zona 3 (Músculos)", "Zona 4 (Esqueleto)", "Zona 7 (Pele)"])
                 sinal_desc = st.text_input("Sinal (Ex: Lacuna, Anel)", "Lacuna")
 
         if ent:
             img = Image.open(ent)
             img_hd = extrair_qualidade_maxima(img)
-            # Mantém Zoom e Mapa originais
             if st.checkbox("🔍 Zoom Inteligente", value=True): img_hd = aplicar_zoom_inteligente(img_hd)
             if st.checkbox("🗺️ Mapeamento"): img_hd = aplicar_mapa_iridologico(img_hd)
             
             with c2:
                 st.image(img_hd, caption="Análise Multiespectral", use_container_width=True)
                 if st.button("⚡ GERAR RELATÓRIO PÓS-ANÁLISE", type="primary"):
-                    # Processamento
                     correlacao = obter_correlacao_bibliografica(hora_iris, zona_iris)
                     
                     st.markdown('<div class="report-card">', unsafe_allow_html=True)
@@ -95,23 +100,23 @@ if realizar_login():
                     st.info(f"**Correspondência Teórica:** {correlacao}")
                     st.warning("⚠️ DISCLAIMER: Este estudo acadêmico não substitui diagnóstico médico.")
                     
-                    # Geração do PDF v13 (Baseado no seu Template)
+                    # Motor PDF com Template Acadêmico
                     pdf = FPDF()
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 16)
                     pdf.cell(200, 10, "RELATÓRIO IRIDOLÓGICO - GENESIS AI", ln=True, align='C')
                     pdf.set_font("Arial", '', 12)
-                    pdf.cell(200, 10, f"Paciente: {nome_p}", ln=True)
-                    pdf.ln(5)
-                    pdf.multi_cell(0, 10, f"Sinal: {sinal_desc}\nLocal: {hora_iris} - {zona_iris}\nCorrelacao: {correlacao}")
+                    pdf.cell(200, 10, f"Paciente: {nome_p} | Data: {datetime.datetime.now().strftime('%d/%m/%Y')}", ln=True)
                     pdf.ln(10)
+                    pdf.multi_cell(0, 10, f"Análise baseada no Mapa de Jensen.\nSinal: {sinal_desc}\nLocalização: {hora_iris} na {zona_iris}.\nCorrespondência Bibliográfica: {correlacao}")
+                    pdf.ln(15)
                     pdf.set_font("Arial", 'I', 8)
-                    pdf.multi_cell(0, 5, "Iridologia não é reconhecida como método médico pelo CFM. Procure um médico.")
+                    pdf.multi_cell(0, 5, "Este documento identifica correlações teóricas. Iridologia não é reconhecida como método médico pelo CFM. Procure sempre um profissional de saúde licenciado.")
                     
-                    st.download_button("🖨️ BAIXAR DOSSIÊ ACADÊMICO", pdf.output(dest='S').encode('latin-1'), file_name=f"iridologia_{nome_p}.pdf")
+                    st.download_button("🖨️ BAIXAR RELATÓRIO PDF", pdf.output(dest='S').encode('latin-1'), file_name=f"relatorio_iridologia_{nome_p}.pdf")
                     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- DEMAIS MÓDULOS (MANTIDOS INTACTOS) ---
+    # --- DEMAIS MÓDULOS (PRESERVAÇÃO TOTAL) ---
     elif m_der: renderizar_plataforma("Dermatologia")
     elif m_rad: renderizar_plataforma("Radiologia")
     elif m_lab:
@@ -123,7 +128,7 @@ if realizar_login():
         p = st.text_area("Consulta Multimodal")
         if st.button("Executar"): st.info(motor_multimodal_genesis(None, p))
 
-# Função genérica mantida para os outros módulos não sofrerem alteração
+# Função genérica para os módulos legados
 def renderizar_plataforma(label):
     st.subheader(f"Estação {label}")
-    # ... (restante da sua função original que você já tem)
+    # (O código original de renderização segue aqui)
