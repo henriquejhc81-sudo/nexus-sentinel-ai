@@ -16,35 +16,42 @@ st.markdown("""
         color: #A51C30; font-family: 'Inter', sans-serif; font-size: 38px; font-weight: 800;
         border-left: 5px solid #1e3a8a; padding-left: 15px; margin-bottom: 30px;
     }
-    .img-container { border: 2px solid #1e3a8a; border-radius: 10px; overflow: hidden; }
+    .img-container { border: 2px solid #1e3a8a; border-radius: 10px; overflow: hidden; background: #000; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNÇÃO DE AUTO-AJUSTE (NOVA v14.2) ---
+# --- FUNÇÃO DE AUTO-AJUSTE CORRIGIDA (v14.3) ---
 def auto_ajuste_forense(imagem_pil):
     """
-    Detecta a íris e centraliza a imagem para evitar o erro de posicionamento do print.
+    Detecta a íris e centraliza a imagem. 
+    FIX: Correção do erro de comparação de array (ValueError).
     """
     img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
+    h, w = img_cv.shape[:2] # Pega altura e largura separadamente
+    
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    # Suavização para detecção
     blurred = cv2.medianBlur(gray, 5)
     circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1, 200, param1=50, param2=30, minRadius=50, maxRadius=300)
     
     if circles is not None:
         circles = np.uint16(np.around(circles))
-        x, y, r = circles[0][0]
-        # Define um quadrado ao redor da íris com margem de segurança
-        margem = int(r * 1.5)
-        y1, y2 = max(0, y-margem), min(img_cv.shape, y+margem)
-        x1, x2 = max(0, x-margem), min(img_cv.shape, x+margem)
+        # Pega o primeiro círculo detectado
+        cx, cy, cr = circles[0][0]
+        
+        margem = int(cr * 1.8)
+        # Correção: Agora comparando valores individuais (inteiros)
+        y1, y2 = max(0, int(cy) - margem), min(h, int(cy) + margem)
+        x1, x2 = max(0, int(cx) - margem), min(w, int(cx) + margem)
+        
         crop = img_cv[y1:y2, x1:x2]
-        return Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
-    return imagem_pil # Se não detectar, mantém original mas com redimensionamento padronizado
+        if crop.size > 0:
+            return Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+            
+    return imagem_pil
 
 st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
 
-# --- DASHBOARD (MANTIDO CAMPOS EM BRANCO) ---
+# --- DASHBOARD (CAMPOS LIMPOS) ---
 with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
     c1, c2, c3, c4 = st.columns(4)
     with c1: nome_p = st.text_input("NOME COMPLETO", value="")
@@ -60,11 +67,11 @@ with st.sidebar:
     m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
     m_rad = st.toggle("📂 Radiologia Digital", value=False)
     st.divider()
-    st.caption("Genesis Forensic AI Engine v14.2")
+    st.caption("Genesis Forensic AI Engine v14.3")
 
-# --- ESTAÇÃO MASTER COM AUTO-AJUSTE ---
+# --- ESTAÇÃO MASTER ---
 if m_iri:
-    st.markdown("### 🔬 ESTAÇÃO IRIDOLOGIA MASTER")
+    st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
     col_input, col_viz = st.columns([1, 1.2], gap="large")
     
     with col_input:
@@ -77,7 +84,7 @@ if m_iri:
                 st.video(ent)
             else:
                 img_raw = Image.open(ent)
-                # Aplicação do Auto-Ajuste v14.2 antes de exibir
+                # Execução do Auto-Ajuste corrigido
                 img_ajustada = auto_ajuste_forense(img_raw)
                 img_hd = extrair_qualidade_maxima(img_ajustada)
                 
@@ -88,12 +95,10 @@ if m_iri:
                 if zoom: img_hd = aplicar_zoom_inteligente(img_hd)
                 if map_iris: img_hd = aplicar_mapa_iridologico(img_hd)
                 
-                # Exibição com moldura CSS para garantir centralização
                 st.markdown('<div class="img-container">', unsafe_allow_html=True)
-                st.image(img_hd, caption="Processamento Multiespectral Sentinel - Auto Ajustado", use_container_width=True)
+                st.image(img_hd, caption="Processamento Sentinel - Alinhamento Estabilizado", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            # --- MOTOR DE RELATÓRIO CORRIGIDO ---
             if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
                 pdf = FPDF()
                 pdf.add_page()
@@ -101,19 +106,15 @@ if m_iri:
                 pdf.rect(0, 0, 210, 35, 'F')
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Arial", 'B', 20)
-                pdf.cell(0, 15, "IRISDIAGNOSE CLINICAL REPORT - HBS STYLE", ln=True, align='C')
+                pdf.cell(0, 15, "IRISDIAGNOSE CLINICAL REPORT", ln=True, align='C')
                 
-                # Dados Biográficos e IMC
                 pdf.set_text_color(0, 0, 0)
                 pdf.ln(25)
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 10, f"ESTUDO DE CASO: {nome_p.upper() or 'NÃO IDENTIFICADO'}", ln=True)
+                pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() or 'NÃO IDENTIFICADO'}", ln=True)
                 
-                # Inclusão da Imagem Auto-Ajustada no Relatório (Centralização no PDF)
-                # Salvando temporariamente para o PDF
+                # Salva imagem para o PDF
                 img_hd.save("temp_report.jpg")
-                pdf.image("temp_report.jpg", x=55, y=100, w=100) # x=55 centraliza imagem de 100mm
+                pdf.image("temp_report.jpg", x=55, y=100, w=100)
                 
-                pdf_output = pdf.output(dest='S').encode('latin-1')
-                st.success("Dossiê HBS auto-ajustado com sucesso!")
-                st.download_button("📥 BAIXAR RELATÓRIO", data=pdf_output, file_name=f"HBS_Report_{nome_p}.pdf")
+                st.success("Dossiê gerado com sucesso!")
+                st.download_button("📥 BAIXAR RELATÓRIO", data=pdf.output(dest='S').encode('latin-1'), file_name=f"HBS_Report_{nome_p}.pdf")
