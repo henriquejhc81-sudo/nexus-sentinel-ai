@@ -20,28 +20,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNÇÃO DE AUTO-AJUSTE CORRIGIDA (v14.3) ---
+# --- FUNÇÃO DE AUTO-AJUSTE REFORÇADA (v14.4) ---
 def auto_ajuste_forense(imagem_pil):
     """
-    Detecta a íris e centraliza a imagem. 
-    FIX: Correção do erro de comparação de array (ValueError).
+    Centraliza a íris com pré-processamento de contraste para evitar falha de detecção.
     """
     img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
-    h, w = img_cv.shape[:2] # Pega altura e largura separadamente
+    h, w = img_cv.shape[:2]
     
+    # Pré-processamento: Aumenta contraste para a IA "enxergar" a pupila
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.medianBlur(gray, 5)
-    circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1, 200, param1=50, param2=30, minRadius=50, maxRadius=300)
+    gray = cv2.equalizeHist(gray) 
+    blurred = cv2.GaussianBlur(gray, (9, 9), 2)
+    
+    # Detecção mais agressiva
+    circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1, h/4, param1=100, param2=30, minRadius=int(h/10), maxRadius=int(h/2))
     
     if circles is not None:
         circles = np.uint16(np.around(circles))
-        # Pega o primeiro círculo detectado
-        cx, cy, cr = circles[0][0]
+        cx, cy, cr = circles[0][0] # Pega o centro do primeiro círculo
         
-        margem = int(cr * 1.8)
-        # Correção: Agora comparando valores individuais (inteiros)
-        y1, y2 = max(0, int(cy) - margem), min(h, int(cy) + margem)
-        x1, x2 = max(0, int(cx) - margem), min(w, int(cx) + margem)
+        # Define área de interesse (ROI) - 2x o raio detectado
+        margem = int(cr * 2.0)
+        y1, y2 = max(0, cy - margem), min(h, cy + margem)
+        x1, x2 = max(0, cx - margem), min(w, cx + margem)
         
         crop = img_cv[y1:y2, x1:x2]
         if crop.size > 0:
@@ -51,7 +53,7 @@ def auto_ajuste_forense(imagem_pil):
 
 st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
 
-# --- DASHBOARD (CAMPOS LIMPOS) ---
+# --- DASHBOARD DO PACIENTE ---
 with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
     c1, c2, c3, c4 = st.columns(4)
     with c1: nome_p = st.text_input("NOME COMPLETO", value="")
@@ -67,7 +69,7 @@ with st.sidebar:
     m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
     m_rad = st.toggle("📂 Radiologia Digital", value=False)
     st.divider()
-    st.caption("Genesis Forensic AI Engine v14.3")
+    st.caption("Genesis Forensic AI Engine v14.4")
 
 # --- ESTAÇÃO MASTER ---
 if m_iri:
@@ -76,7 +78,7 @@ if m_iri:
     
     with col_input:
         f = st.radio("MODALIDADE DE ENTRADA", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA LIVE"], horizontal=True)
-        ent = st.file_uploader("Upload", type=['jpg','png','jpeg','mp4','mov']) if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
+        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov']) if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
 
     if ent:
         with col_viz:
@@ -84,7 +86,7 @@ if m_iri:
                 st.video(ent)
             else:
                 img_raw = Image.open(ent)
-                # Execução do Auto-Ajuste corrigido
+                # Processamento de Centralização v14.4
                 img_ajustada = auto_ajuste_forense(img_raw)
                 img_hd = extrair_qualidade_maxima(img_ajustada)
                 
@@ -96,9 +98,10 @@ if m_iri:
                 if map_iris: img_hd = aplicar_mapa_iridologico(img_hd)
                 
                 st.markdown('<div class="img-container">', unsafe_allow_html=True)
-                st.image(img_hd, caption="Processamento Sentinel - Alinhamento Estabilizado", use_container_width=True)
+                st.image(img_hd, caption="Processamento Sentinel - Íris Centralizada", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
+            # --- CORREÇÃO DO MOTOR DE DOWNLOAD (AttributeError Fix) ---
             if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
                 pdf = FPDF()
                 pdf.add_page()
@@ -112,9 +115,16 @@ if m_iri:
                 pdf.ln(25)
                 pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() or 'NÃO IDENTIFICADO'}", ln=True)
                 
-                # Salva imagem para o PDF
                 img_hd.save("temp_report.jpg")
                 pdf.image("temp_report.jpg", x=55, y=100, w=100)
                 
+                # FIX: Gerando o buffer antes do botão para evitar o erro de atributo
+                pdf_data = pdf.output(dest='S').encode('latin-1')
+                
                 st.success("Dossiê gerado com sucesso!")
-                st.download_button("📥 BAIXAR RELATÓRIO", data=pdf.output(dest='S').encode('latin-1'), file_name=f"HBS_Report_{nome_p}.pdf")
+                st.download_button(
+                    label="📥 BAIXAR RELATÓRIO PDF",
+                    data=pdf_data,
+                    file_name=f"HBS_Report_{nome_p}.pdf",
+                    mime="application/pdf"
+                )
