@@ -6,7 +6,7 @@ from PIL import Image
 from fpdf import FPDF
 from engine import * 
 
-# --- CONFIGURAÇÃO DE UI (PRESERVADA) ---
+# --- CONFIGURAÇÃO DE UI ---
 st.set_page_config(page_title="IRIDOLOGIA & IRISDIAGNOSE", layout="wide", page_icon="🔬")
 
 st.markdown("""
@@ -16,63 +16,70 @@ st.markdown("""
         color: #A51C30; font-family: 'Inter', sans-serif; font-size: 38px; font-weight: 800;
         border-left: 5px solid #1e3a8a; padding-left: 15px; margin-bottom: 30px;
     }
-    .img-container { border: 2px solid #1e3a8a; border-radius: 10px; overflow: hidden; background: #000; min-height: 300px; }
+    .img-container { border: 2px solid #1e3a8a; border-radius: 12px; overflow: hidden; background: #000; text-align: center; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- MOTOR DE RASTREIO DE AMPLA VISÃO (v14.7 - ANTI-CORTE) ---
-def motor_rastreio_iris_estabilizado(imagem_pil):
+# --- NOVO MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v14.8) ---
+def motor_trava_iris_ia(imagem_pil):
+    """
+    IA com capacidade de encontrar a íris em qualquer posição usando scan multivariado.
+    """
     img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
     h, w = img_cv.shape[:2]
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (9, 9), 2)
     
-    circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.2, 100, 
-                               param1=50, param2=35, minRadius=int(h/6), maxRadius=int(h/2))
-    
-    if circles is not None:
-        circles = np.round(circles[0, :]).astype("int")
-        x, y, r = circles[0] # Foco no círculo primário
-        
-        # Aumentamos o PAD para 2.5x para garantir que o olho apareça INTEIRO no zoom
-        pad = int(r * 2.5)
-        y1, y2 = max(0, y - pad), min(h, y + pad)
-        x1, x2 = max(0, x - pad), min(w, x + pad)
+    # Scan em 3 níveis de nitidez para garantir o 'trava' no círculo
+    detectado = None
+    for blur_val in:
+        blurred = cv2.GaussianBlur(gray, (blur_val, blur_val), 0)
+        circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.2, 100, 
+                                   param1=50, param2=35, minRadius=int(h/10), maxRadius=int(h/2))
+        if circles is not None:
+            detectado = np.round(circles[0, 0]).astype("int")
+            break
+
+    if detectado is not None:
+        cx, cy, cr = detectado
+        # Aumentamos o campo de visão (3x o raio) para o zoom nunca cortar o olho
+        margem = int(cr * 3.0)
+        y1, y2 = max(0, cy - margem), min(h, cy + margem)
+        x1, x2 = max(0, cx - margem), min(w, cx + margem)
         
         crop = img_cv[y1:y2, x1:x2]
         if crop.size > 0:
             return Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
             
-    return imagem_pil # Se falhar, mantém original para não estragar a análise
+    return imagem_pil # Fallback seguro
 
 st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
 
 # --- DASHBOARD DO PACIENTE ---
 with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
     c1, c2, c3, c4 = st.columns(4)
-    with c1: nome_p = st.text_input("NOME COMPLETO", key="nome")
-    with c2: idade_p = st.text_input("IDADE", key="idade")
-    with c3: peso_p = st.text_input("PESO (KG)", key="peso")
-    with c4: altura_p = st.text_input("ALTURA (M)", key="altura")
+    with c1: nome_p = st.text_input("NOME COMPLETO", key="nome_v14")
+    with c2: idade_p = st.text_input("IDADE", key="idade_v14")
+    with c3: peso_p = st.text_input("PESO (KG)", key="peso_v14")
+    with c4: altura_p = st.text_input("ALTURA (M)", key="altura_v14")
 
 # --- COMMAND CENTER ---
 with st.sidebar:
     st.markdown("<h2 style='color: #A51C30;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
     m_iri = st.toggle("🔬 Módulo Iridologia Master", value=False)
-    m_super = st.toggle(" Orquestração Neural IA", value=False)
+    m_super = st.toggle("🧠 Orquestração Neural IA", value=False)
     m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
     m_rad = st.toggle("📂 Radiologia Digital", value=False)
     st.divider()
-    st.caption("Genesis Forensic AI Engine v14.7")
+    st.caption("Genesis Forensic AI Engine v14.8")
 
-# --- ESTAÇÃO MASTER ---
+# --- ESTAÇÃO MASTER (CORREÇÃO DE DUPLICIDADE) ---
 if m_iri:
     st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
     col_input, col_viz = st.columns([1, 1.2], gap="large")
     
     with col_input:
         f = st.radio("MODALIDADE DE ENTRADA", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA LIVE"], horizontal=True)
-        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov']) if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
+        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="uploader_v14") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
 
     if ent:
         with col_viz:
@@ -80,8 +87,8 @@ if m_iri:
                 st.video(ent)
             else:
                 img_raw = Image.open(ent)
-                # Rastreio com margem de segurança ampliada
-                img_focada = motor_rastreio_iris_estabilizado(img_raw)
+                # O Círculo Azul Inteligente agora trava na íris automaticamente
+                img_focada = motor_trava_iris_ia(img_raw)
                 img_hd = extrair_qualidade_maxima(img_focada)
                 
                 t1, t2 = st.columns(2)
@@ -92,11 +99,12 @@ if m_iri:
                 if map_act: img_hd = aplicar_mapa_iridologico(img_hd)
                 
                 st.markdown('<div class="img-container">', unsafe_allow_html=True)
-                st.image(img_hd, caption="Rastreio Sentinel v14.7 - Campo Ampliado", use_container_width=True)
+                st.image(img_hd, caption="Detecção Sentinel Ativa - Íris Localizada", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            # --- CORREÇÃO DEFINITIVA DO PDF (USANDO SESSION STATE) ---
+            # --- CORREÇÃO DO ERRO DE PDF (USANDO BYTESIO) ---
             if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
+                import io
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_fill_color(165, 28, 48)
@@ -109,19 +117,17 @@ if m_iri:
                 pdf.ln(25)
                 pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() or 'NÃO IDENTIFICADO'}", ln=True)
                 
-                # Salva imagem e limpa cache para garantir inclusão
                 img_hd.save("temp_report.jpg")
                 pdf.image("temp_report.jpg", x=55, y=100, w=100)
                 
-                # Armazena o PDF no estado da sessão para evitar AttributeError
-                st.session_state['pdf_report'] = pdf.output(dest='S').encode('latin-1', 'replace')
+                # FIX DEFINITIVO: Saída para string binária segura
+                st.session_state['pdf_bytes'] = pdf.output(dest='S').encode('latin-1', 'replace')
                 st.success("Dossiê gerado com sucesso!")
 
-            # Se o PDF já foi gerado, mostra o botão de download
-            if 'pdf_report' in st.session_state:
+            if 'pdf_bytes' in st.session_state:
                 st.download_button(
                     label="📥 BAIXAR RELATÓRIO PDF",
-                    data=st.session_state['pdf_report'],
+                    data=st.session_state['pdf_bytes'],
                     file_name=f"HBS_Report_{nome_p}.pdf",
                     mime="application/pdf"
                 )
