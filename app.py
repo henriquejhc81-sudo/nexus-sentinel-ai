@@ -6,7 +6,7 @@ from PIL import Image
 from fpdf import FPDF
 from engine import * 
 
-# --- CONFIGURAÇÃO DE UI ---
+# --- CONFIGURAÇÃO DE UI (ESTILO BATELLO/HARVARD) ---
 st.set_page_config(page_title="IRIDOLOGIA & IRISDIAGNOSE", layout="wide", page_icon="🔬")
 
 st.markdown("""
@@ -20,26 +20,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v14.9 - CORRIGIDO) ---
+# --- MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v15.0 - SINTAXE CORRIGIDA) ---
 def motor_trava_iris_ia(imagem_pil):
+    """
+    Localiza a íris em qualquer posição com scan multivariado.
+    """
     img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
     h, w = img_cv.shape[:2]
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     
     detectado = None
-    # CORREÇÃO DO ERRO DE SINTAXE: Lista de desfoque definida [3, 5, 7, 9]
+    # CORREÇÃO DEFINITIVA: Lista de desfoque inserida para evitar SyntaxError
     for blur_val in:
         blurred = cv2.GaussianBlur(gray, (blur_val, blur_val), 0)
         circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.2, 100, 
                                    param1=50, param2=35, minRadius=int(h/10), maxRadius=int(h/2))
         if circles is not None:
-            detectado = np.round(circles[0, :]).astype("int")
+            detectado = np.round(circles[0, 0]).astype("int")
             break
 
     if detectado is not None:
-        # Pega as coordenadas do primeiro círculo encontrado
         cx, cy, cr = detectado, detectado, detectado[2]
-        # Margem de 3x o raio para garantir que o olho apareça inteiro
+        # Margem de 3x o raio garante que o olho apareça inteiro no zoom
         margem = int(cr * 3.0)
         y1, y2 = max(0, cy - margem), min(h, cy + margem)
         x1, x2 = max(0, cx - margem), min(w, cx + margem)
@@ -52,15 +54,15 @@ def motor_trava_iris_ia(imagem_pil):
 
 st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
 
-# --- DASHBOARD DO PACIENTE ---
+# --- DASHBOARD DO PACIENTE (CAMPOS EM BRANCO) ---
 with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
     c1, c2, c3, c4 = st.columns(4)
-    with c1: nome_p = st.text_input("NOME COMPLETO", key="nome_v14_9")
-    with c2: idade_p = st.text_input("IDADE", key="idade_v14_9")
-    with c3: peso_p = st.text_input("PESO (KG)", key="peso_v14_9")
-    with c4: altura_p = st.text_input("ALTURA (M)", key="altura_v14_9")
+    with c1: nome_p = st.text_input("NOME COMPLETO", key="n15")
+    with c2: idade_p = st.text_input("IDADE", key="i15")
+    with c3: peso_p = st.text_input("PESO (KG)", key="p15")
+    with c4: altura_p = st.text_input("ALTURA (M)", key="a15")
 
-# --- COMMAND CENTER ---
+# --- COMMAND CENTER (DESLIGADO POR PADRÃO) ---
 with st.sidebar:
     st.markdown("<h2 style='color: #A51C30;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
     m_iri = st.toggle("🔬 Módulo Iridologia Master", value=False)
@@ -68,16 +70,17 @@ with st.sidebar:
     m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
     m_rad = st.toggle("📂 Radiologia Digital", value=False)
     st.divider()
-    st.caption("Genesis Forensic AI Engine v14.9")
+    st.caption("Genesis Forensic AI Engine v15.0")
 
-# --- ESTAÇÃO MASTER ---
+# --- ESTAÇÃO MASTER (CORREÇÃO DE DUPLICIDADE) ---
 if m_iri:
     st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
     col_input, col_viz = st.columns([1, 1.2], gap="large")
     
     with col_input:
+        # Inversão para evitar acionamento automático da câmera
         f = st.radio("MODALIDADE DE ENTRADA", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA LIVE"], horizontal=True)
-        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="up_14_9") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
+        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="up15") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
 
     if ent:
         with col_viz:
@@ -85,7 +88,7 @@ if m_iri:
                 st.video(ent)
             else:
                 img_raw = Image.open(ent)
-                # O Círculo Inteligente trava na íris automaticamente
+                # IA Trava na Íris automaticamente
                 img_focada = motor_trava_iris_ia(img_raw)
                 img_hd = extrair_qualidade_maxima(img_focada)
                 
@@ -97,10 +100,10 @@ if m_iri:
                 if map_act: img_hd = aplicar_mapa_iridologico(img_hd)
                 
                 st.markdown('<div class="img-container">', unsafe_allow_html=True)
-                st.image(img_hd, caption="Íris Localizada e Processada Sentinel", use_container_width=True)
+                st.image(img_hd, caption="Detecção Sentinel Ativa - Íris Centralizada", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            # --- MOTOR DE PDF BLINDADO ---
+            # --- MOTOR DE RELATÓRIO HARVARD (SISTEMA DE SEGURANÇA) ---
             if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
                 pdf = FPDF()
                 pdf.add_page()
@@ -112,21 +115,19 @@ if m_iri:
                 
                 pdf.set_text_color(0, 0, 0)
                 pdf.ln(25)
-                pdf.set_font("Arial", 'B', 12)
                 pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() if nome_p else 'NÃO IDENTIFICADO'}", ln=True)
                 
                 img_hd.save("temp_report.jpg")
                 pdf.image("temp_report.jpg", x=55, y=100, w=100)
                 
-                # Armazenamento seguro em bytes
-                pdf_output = pdf.output(dest='S').encode('latin-1', 'replace')
-                st.session_state['pdf_ready'] = pdf_output
+                # Exportação segura para download posterior
+                st.session_state['pdf_bytes'] = pdf.output(dest='S').encode('latin-1', 'replace')
                 st.success("Dossiê gerado com sucesso!")
 
-            if 'pdf_ready' in st.session_state:
+            if 'pdf_bytes' in st.session_state:
                 st.download_button(
                     label="📥 BAIXAR RELATÓRIO PDF",
-                    data=st.session_state['pdf_ready'],
+                    data=st.session_state['pdf_bytes'],
                     file_name=f"HBS_Report_{nome_p}.pdf",
                     mime="application/pdf"
                 )
