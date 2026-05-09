@@ -55,3 +55,29 @@ def aplicar_mapa_iridologico(img_pil):
     return Image.fromarray(cv2.addWeighted(overlay, 0.3, img_array, 0.7, 0))
 
 def motor_multimodal_genesis(a, p): return f"Resposta Super IA: Análise concluída para '{p}'."
+import numpy as np
+
+def mapear_sinal_iridologico(hora, zona):
+    """
+    Mapeia coordenadas horárias para a base teórica de Jensen/Batelo (v13.0)
+    """
+    biblioteca_jensen = {
+        "12h": {"Zona 2": "Área Cerebral / Vitalidade", "Zona 4": "Plexo Solar"},
+        "1h":  {"Zona 2": "Face / Maxilar", "Zona 3": "Garganta"},
+        "2h-3h": {"Zona 2": "Fígado (D) / Coração (E)", "Zona 3": "Brônquios"},
+        "6h":  {"Zona 4": "Região Intestinal / Rins", "Zona 7": "Pele / Eliminação"},
+        "9h":  {"Zona 3": "Pulmões", "Zona 2": "Baço (E)"}
+    }
+    
+    contexto = biblioteca_jensen.get(hora, {}).get(zona, "Área Geral - Observar Densidade")
+    return contexto
+
+def calcular_intensidade_sinal(roi_imagem):
+    """
+    Analisa a profundidade da lacuna via densidade de pixels (Tons de Cinza)
+    """
+    gray = cv2.cvtColor(roi_imagem, cv2.COLOR_BGR2GRAY)
+    score = np.mean(gray)
+    if score < 80: return "Forte (Destruição/Cripta)"
+    if score < 150: return "Moderada (Lacuna)"
+    return "Leve (Debilidade)"
