@@ -3,131 +3,138 @@ import datetime
 import cv2
 import numpy as np
 from PIL import Image
-from fpdf import FPDF
-from engine import * 
+import io
 
-# --- CONFIGURAÇÃO DE UI (ESTILO BATELLO/HARVARD) ---
-st.set_page_config(page_title="IRIDOLOGIA & IRISDIAGNOSE", layout="wide", page_icon="🔬")
+# Tenta carregar as bibliotecas do seu requirements de forma segura
+try:
+    from fpdf import FPDF
+except ImportError:
+    st.error("Erro: fpdf2 não instalado. Verifique o requirements.txt")
 
-st.markdown("""
-    <style>
-    .stApp { background: radial-gradient(circle at top right, #1a1c2c, #0d0d0d); }
-    .main-title {
-        color: #A51C30; font-family: 'Inter', sans-serif; font-size: 38px; font-weight: 800;
-        border-left: 5px solid #1e3a8a; padding-left: 15px; margin-bottom: 30px;
-    }
-    .img-container { border: 2px solid #1e3a8a; border-radius: 12px; overflow: hidden; background: #000; text-align: center; }
-    </style>
-""", unsafe_allow_html=True)
+try:
+    from engine import * 
+except ImportError:
+    st.warning("Atenção: Funções de engine.py não localizadas. Operando em modo de segurança.")
 
-# --- MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v15.1 - SINTAXE BLINDADA) ---
-def motor_trava_iris_ia(imagem_pil):
-    """
-    IA com scan multivariado para encontrar a íris em qualquer posição.
-    """
-    img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
-    h, w = img_cv.shape[:2]
-    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    
-    detectado = None
-    # VALORES EXPLICITOS PARA EVITAR SYNTAXERROR
-    for blur_val in:
-        blurred = cv2.GaussianBlur(gray, (blur_val, blur_val), 0)
-        circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.2, 100, 
-                                   param1=50, param2=35, minRadius=int(h/10), maxRadius=int(h/2))
-        if circles is not None:
-            detectado = np.round(circles[0, :]).astype("int")
-            break
+# --- ARQUITETURA GLOBAL GENESIS v16.2 ---
+class GenesisForensic:
+    def __init__(self):
+        self.configurar_interface()
+        self.paciente = {}
 
-    if detectado is not None:
-        cx, cy, cr = detectado, detectado, detectado[2]
-        # Margem de 3x o raio para garantir o olho inteiro (conforme solicitado)
-        margem = int(cr * 3.0)
-        y1, y2 = max(0, cy - margem), min(h, cy + margem)
-        x1, x2 = max(0, cx - margem), min(w, cx + margem)
-        
-        crop = img_cv[y1:y2, x1:x2]
-        if crop.size > 0:
-            return Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+    def configurar_interface(self):
+        st.set_page_config(page_title="IRIDOLOGIA & IRISDIAGNOSE PRO", layout="wide", page_icon="🔬")
+        st.markdown("""
+            <style>
+            .stApp { background: radial-gradient(circle at top right, #050a18, #000000); }
+            .main-title {
+                color: #A51C30; font-family: 'Inter', sans-serif; font-size: 38px; font-weight: 800;
+                border-left: 5px solid #1e3a8a; padding-left: 15px; margin-bottom: 30px;
+            }
+            .img-container { border: 2px solid #1e3a8a; border-radius: 12px; background: #000; padding: 10px; text-align: center; }
+            </style>
+        """, unsafe_allow_html=True)
+
+    def motor_ia_trava_iris(self, imagem_pil):
+        """ Localiza a íris em qualquer posição com Scan Multivariado (v16.2) """
+        try:
+            img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
+            h, w = img_cv.shape[:2]
+            gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+            detectado = None
             
-    return imagem_pil
+            # LISTA DE VARREDURA CORRIGIDA (Blindada contra SyntaxError)
+            for b in:
+                blurred = cv2.GaussianBlur(gray, (b, b), 0)
+                circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.2, 100, 
+                                           param1=50, param2=35, minRadius=int(h/10), maxRadius=int(h/2))
+                if circles is not None:
+                    detectado = np.round(circles[0, :]).astype("int")
+                    break
 
-st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
+            if detectado is not None:
+                cx, cy, cr = detectado, detectado, detectado[2]
+                margem = int(cr * 3.0)
+                y1, y2 = max(0, cy - margem), min(h, cy + margem)
+                x1, x2 = max(0, cx - margem), min(w, cx + margem)
+                crop = img_cv[y1:y2, x1:x2]
+                return Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+        except Exception as e:
+            st.sidebar.error(f"Erro no Rastreio: {e}")
+        return imagem_pil
 
-# --- DASHBOARD DO PACIENTE (CAMPOS EM BRANCO) ---
-with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: nome_p = st.text_input("NOME COMPLETO", key="n15_1")
-    with c2: idade_p = st.text_input("IDADE", key="i15_1")
-    with c3: peso_p = st.text_input("PESO (KG)", key="p15_1")
-    with c4: altura_p = st.text_input("ALTURA (M)", key="a15_1")
+    def interface_principal(self):
+        st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
 
-# --- COMMAND CENTER (DESLIGADO POR PADRÃO) ---
-with st.sidebar:
-    st.markdown("<h2 style='color: #A51C30;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
-    m_iri = st.toggle("🔬 Módulo Iridologia Master", value=False)
-    m_super = st.toggle("🧠 Orquestração Neural IA", value=False)
-    m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
-    m_rad = st.toggle("📂 Radiologia Digital", value=False)
-    st.divider()
-    st.caption("Genesis Forensic AI Engine v15.1")
+        # 1. DASHBOARD DO PACIENTE
+        with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
+            c1, c2, c3, c4 = st.columns(4)
+            self.paciente['nome'] = c1.text_input("NOME COMPLETO", key="n162")
+            self.paciente['idade'] = c2.text_input("IDADE", key="i162")
+            self.paciente['peso'] = c3.text_input("PESO (KG)", key="p162")
+            self.paciente['altura'] = c4.text_input("ALTURA (M)", key="a162")
 
-# --- ESTAÇÃO MASTER ---
-if m_iri:
-    st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
-    col_input, col_viz = st.columns([1, 1.2], gap="large")
-    
-    with col_input:
-        # Inversão para evitar acionamento da câmera
-        f = st.radio("MODALIDADE DE ENTRADA", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA LIVE"], horizontal=True)
-        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="up15_1") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
+        # 2. COMMAND CENTER (ORQUESTRADOR DE MÓDULOS)
+        with st.sidebar:
+            st.markdown("<h2 style='color: #A51C30;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
+            m_iri = st.toggle("🔬 Módulo Iridologia Master", value=False)
+            m_super = st.toggle("🧠 Orquestração Neural IA", value=False)
+            m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
+            m_rad = st.toggle("📂 Radiologia Digital", value=False)
+            st.divider()
+            st.caption("GENESIS FORENSIC v16.2 | Multi-Module Ready")
 
-    if ent:
-        with col_viz:
-            if hasattr(ent, 'type') and 'video' in ent.type:
-                st.video(ent)
-            else:
-                img_raw = Image.open(ent)
-                # IA de Rastreio com Margem Ampliada
-                img_focada = motor_trava_iris_ia(img_raw)
-                img_hd = extrair_qualidade_maxima(img_focada)
-                
-                t1, t2 = st.columns(2)
-                with t1: zoom_act = st.checkbox("🔍 Zoom Analítico", value=True)
-                with t2: map_act = st.checkbox("🗺️ Jensen Overlay")
-                
-                if zoom_act: img_hd = aplicar_zoom_inteligente(img_hd)
-                if map_act: img_hd = aplicar_mapa_iridologico(img_hd)
-                
-                st.markdown('<div class="img-container">', unsafe_allow_html=True)
-                st.image(img_hd, caption="Detecção Sentinel v15.1 - Trava de Íris Ativa", use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+        # 3. LÓGICA DO MÓDULO IRIDOLOGIA
+        if m_iri:
+            st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
+            col_in, col_viz = st.columns([1, 1.2], gap="large")
+            
+            with col_in:
+                f = st.radio("FONTE DE DADOS", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA"], horizontal=True)
+                ent = st.file_uploader("Importar Mídia HD", type=['jpg','png','jpeg','mp4','mov']) if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
 
-            # --- MOTOR DE RELATÓRIO HARVARD ---
-            if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
-                pdf = FPDF()
-                pdf.add_page()
-                pdf.set_fill_color(165, 28, 48)
-                pdf.rect(0, 0, 210, 35, 'F')
-                pdf.set_text_color(255, 255, 255)
-                pdf.set_font("Arial", 'B', 20)
-                pdf.cell(0, 15, "IRISDIAGNOSE CLINICAL REPORT", ln=True, align='C')
-                
-                pdf.set_text_color(0, 0, 0)
-                pdf.ln(25)
-                pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() if nome_p else 'NÃO IDENTIFICADO'}", ln=True)
-                
-                img_hd.save("temp_report.jpg")
-                pdf.image("temp_report.jpg", x=55, y=100, w=100)
-                
-                # Armazenamento em bytes para download seguro
-                st.session_state['pdf_output'] = pdf.output(dest='S').encode('latin-1', 'replace')
-                st.success("Dossiê gerado com sucesso!")
+            if ent:
+                with col_viz:
+                    img_raw = Image.open(ent)
+                    # IA DE RASTREIO E CENTRALIZAÇÃO
+                    img_focada = self.motor_ia_trava_iris(img_raw)
+                    img_hd = extrair_qualidade_maxima(img_focada)
+                    
+                    t1, t2 = st.columns(2)
+                    if t1.checkbox("🔍 Zoom Analítico (Sentinel)", value=True): 
+                        img_hd = aplicar_zoom_inteligente(img_hd)
+                    if t2.checkbox("🗺️ Jensen/Batelo Overlay"): 
+                        img_hd = aplicar_mapa_iridologico(img_hd)
+                    
+                    st.markdown('<div class="img-container">', unsafe_allow_html=True)
+                    st.image(img_hd, caption="Processamento Sentinel v16.2", use_container_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
 
-            if 'pdf_output' in st.session_state:
-                st.download_button(
-                    label="📥 BAIXAR RELATÓRIO PDF",
-                    data=st.session_state['pdf_output'],
-                    file_name=f"HBS_Report_{nome_p}.pdf",
-                    mime="application/pdf"
-                )
+                    if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
+                        self.gerar_relatorio_pdf(img_hd)
+
+                    if 'pdf_buffer' in st.session_state:
+                        st.download_button("📥 BAIXAR RELATÓRIO PDF", st.session_state['pdf_buffer'], f"HBS_Report_{self.paciente['nome']}.pdf")
+
+        # Fallback para outros módulos (SkinAI, etc)
+        elif m_der:
+            st.info("Módulo SkinAI v2 Pro aguardando integração de engine.")
+
+    def gerar_relatorio_pdf(self, img):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_fill_color(165, 28, 48); pdf.rect(0, 0, 210, 35, 'F')
+        pdf.set_text_color(255, 255, 255); pdf.set_font("Arial", 'B', 20)
+        pdf.cell(0, 15, "IRISDIAGNOSE CLINICAL REPORT", ln=True, align='C')
+        
+        pdf.set_text_color(0, 0, 0); pdf.ln(25); pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, f"PACIENTE: {self.paciente['nome'].upper() or 'NÃO IDENTIFICADO'}", ln=True)
+        
+        img.save("temp_report.jpg")
+        pdf.image("temp_report.jpg", x=55, y=100, w=100)
+        
+        st.session_state['pdf_buffer'] = pdf.output(dest='S').encode('latin-1', 'replace')
+        st.success("Dossiê Harvard Estruturado!")
+
+if __name__ == "__main__":
+    GenesisForensic().interface_principal()
