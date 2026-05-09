@@ -20,28 +20,26 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- NOVO MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v14.8) ---
+# --- MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v14.9 - CORRIGIDO) ---
 def motor_trava_iris_ia(imagem_pil):
-    """
-    IA com capacidade de encontrar a íris em qualquer posição usando scan multivariado.
-    """
     img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
     h, w = img_cv.shape[:2]
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     
-    # Scan em 3 níveis de nitidez para garantir o 'trava' no círculo
     detectado = None
+    # CORREÇÃO DO ERRO DE SINTAXE: Lista de desfoque definida [3, 5, 7, 9]
     for blur_val in:
         blurred = cv2.GaussianBlur(gray, (blur_val, blur_val), 0)
         circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.2, 100, 
                                    param1=50, param2=35, minRadius=int(h/10), maxRadius=int(h/2))
         if circles is not None:
-            detectado = np.round(circles[0, 0]).astype("int")
+            detectado = np.round(circles[0, :]).astype("int")
             break
 
     if detectado is not None:
-        cx, cy, cr = detectado
-        # Aumentamos o campo de visão (3x o raio) para o zoom nunca cortar o olho
+        # Pega as coordenadas do primeiro círculo encontrado
+        cx, cy, cr = detectado, detectado, detectado[2]
+        # Margem de 3x o raio para garantir que o olho apareça inteiro
         margem = int(cr * 3.0)
         y1, y2 = max(0, cy - margem), min(h, cy + margem)
         x1, x2 = max(0, cx - margem), min(w, cx + margem)
@@ -50,17 +48,17 @@ def motor_trava_iris_ia(imagem_pil):
         if crop.size > 0:
             return Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
             
-    return imagem_pil # Fallback seguro
+    return imagem_pil
 
 st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
 
 # --- DASHBOARD DO PACIENTE ---
 with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
     c1, c2, c3, c4 = st.columns(4)
-    with c1: nome_p = st.text_input("NOME COMPLETO", key="nome_v14")
-    with c2: idade_p = st.text_input("IDADE", key="idade_v14")
-    with c3: peso_p = st.text_input("PESO (KG)", key="peso_v14")
-    with c4: altura_p = st.text_input("ALTURA (M)", key="altura_v14")
+    with c1: nome_p = st.text_input("NOME COMPLETO", key="nome_v14_9")
+    with c2: idade_p = st.text_input("IDADE", key="idade_v14_9")
+    with c3: peso_p = st.text_input("PESO (KG)", key="peso_v14_9")
+    with c4: altura_p = st.text_input("ALTURA (M)", key="altura_v14_9")
 
 # --- COMMAND CENTER ---
 with st.sidebar:
@@ -70,16 +68,16 @@ with st.sidebar:
     m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
     m_rad = st.toggle("📂 Radiologia Digital", value=False)
     st.divider()
-    st.caption("Genesis Forensic AI Engine v14.8")
+    st.caption("Genesis Forensic AI Engine v14.9")
 
-# --- ESTAÇÃO MASTER (CORREÇÃO DE DUPLICIDADE) ---
+# --- ESTAÇÃO MASTER ---
 if m_iri:
     st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
     col_input, col_viz = st.columns([1, 1.2], gap="large")
     
     with col_input:
         f = st.radio("MODALIDADE DE ENTRADA", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA LIVE"], horizontal=True)
-        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="uploader_v14") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
+        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="up_14_9") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
 
     if ent:
         with col_viz:
@@ -87,7 +85,7 @@ if m_iri:
                 st.video(ent)
             else:
                 img_raw = Image.open(ent)
-                # O Círculo Azul Inteligente agora trava na íris automaticamente
+                # O Círculo Inteligente trava na íris automaticamente
                 img_focada = motor_trava_iris_ia(img_raw)
                 img_hd = extrair_qualidade_maxima(img_focada)
                 
@@ -99,12 +97,11 @@ if m_iri:
                 if map_act: img_hd = aplicar_mapa_iridologico(img_hd)
                 
                 st.markdown('<div class="img-container">', unsafe_allow_html=True)
-                st.image(img_hd, caption="Detecção Sentinel Ativa - Íris Localizada", use_container_width=True)
+                st.image(img_hd, caption="Íris Localizada e Processada Sentinel", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            # --- CORREÇÃO DO ERRO DE PDF (USANDO BYTESIO) ---
+            # --- MOTOR DE PDF BLINDADO ---
             if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
-                import io
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_fill_color(165, 28, 48)
@@ -115,19 +112,21 @@ if m_iri:
                 
                 pdf.set_text_color(0, 0, 0)
                 pdf.ln(25)
-                pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() or 'NÃO IDENTIFICADO'}", ln=True)
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() if nome_p else 'NÃO IDENTIFICADO'}", ln=True)
                 
                 img_hd.save("temp_report.jpg")
                 pdf.image("temp_report.jpg", x=55, y=100, w=100)
                 
-                # FIX DEFINITIVO: Saída para string binária segura
-                st.session_state['pdf_bytes'] = pdf.output(dest='S').encode('latin-1', 'replace')
+                # Armazenamento seguro em bytes
+                pdf_output = pdf.output(dest='S').encode('latin-1', 'replace')
+                st.session_state['pdf_ready'] = pdf_output
                 st.success("Dossiê gerado com sucesso!")
 
-            if 'pdf_bytes' in st.session_state:
+            if 'pdf_ready' in st.session_state:
                 st.download_button(
                     label="📥 BAIXAR RELATÓRIO PDF",
-                    data=st.session_state['pdf_bytes'],
+                    data=st.session_state['pdf_ready'],
                     file_name=f"HBS_Report_{nome_p}.pdf",
                     mime="application/pdf"
                 )
