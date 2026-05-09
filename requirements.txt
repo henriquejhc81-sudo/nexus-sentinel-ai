@@ -20,29 +20,29 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v15.4 - SINTAXE BLINDADA) ---
+# --- MOTOR: RASTREADOR INTELIGENTE DINÂMICO (v15.5 - FIX DEFINITIVO DE SINTAXE) ---
 def motor_trava_iris_ia(imagem_pil):
     """
-    IA com scan multivariado para encontrar a íris em qualquer posição.
+    IA com scan multivariado para encontrar a íris. 
+    Uso de range() para evitar bloqueio de lista no servidor.
     """
     img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
     h, w = img_cv.shape[:2]
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     
     detectado = None
-    # VALORES EXPLÍCITOS PARA EVITAR SYNTAX ERROR DEFINITIVAMENTE
-    for blur_val in:
-        blurred = cv2.GaussianBlur(gray, (blur_val, blur_val), 0)
+    # VARREDURA DINÂMICA: Tenta desfoques ímpares de 3 a 11
+    for b in range(3, 12, 2):
+        blurred = cv2.GaussianBlur(gray, (b, b), 0)
         circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.2, 100, 
                                    param1=50, param2=35, minRadius=int(h/10), maxRadius=int(h/2))
         if circles is not None:
-            # Extrai o primeiro círculo detectado
-            detectado = np.round(circles[0, 0]).astype("int")
+            detectado = np.round(circles[0, :]).astype("int")
             break
 
     if detectado is not None:
         cx, cy, cr = detectado, detectado, detectado[2]
-        # Margem de 3x o raio garante o olho inteiro (Harvard Standard)
+        # Margem de 3x o raio garante o olho inteiro e centralizado
         margem = int(cr * 3.0)
         y1, y2 = max(0, cy - margem), min(h, cy + margem)
         x1, x2 = max(0, cx - margem), min(w, cx + margem)
@@ -58,10 +58,10 @@ st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_al
 # --- DASHBOARD DO PACIENTE (CAMPOS EM BRANCO) ---
 with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
     c1, c2, c3, c4 = st.columns(4)
-    with c1: nome_p = st.text_input("NOME COMPLETO", key="n15_4")
-    with c2: idade_p = st.text_input("IDADE", key="i15_4")
-    with c3: peso_p = st.text_input("PESO (KG)", key="p15_4")
-    with c4: altura_p = st.text_input("ALTURA (M)", key="a15_4")
+    with c1: nome_p = st.text_input("NOME COMPLETO", key="n15_5")
+    with c2: idade_p = st.text_input("IDADE", key="i15_5")
+    with c3: peso_p = st.text_input("PESO (KG)", key="p15_5")
+    with c4: altura_p = st.text_input("ALTURA (M)", key="a15_5")
 
 # --- COMMAND CENTER (DESLIGADO POR PADRÃO) ---
 with st.sidebar:
@@ -71,16 +71,16 @@ with st.sidebar:
     m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
     m_rad = st.toggle("📂 Radiologia Digital", value=False)
     st.divider()
-    st.caption("Genesis Forensic AI Engine v15.4")
+    st.caption("Genesis Forensic AI Engine v15.5")
 
-# --- ESTAÇÃO MASTER ---
+# --- ESTAÇÃO MASTER (UI LIMPA) ---
 if m_iri:
     st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
     col_input, col_viz = st.columns([1, 1.2], gap="large")
     
     with col_input:
         f = st.radio("MODALIDADE DE ENTRADA", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA LIVE"], horizontal=True)
-        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="up15_4") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
+        ent = st.file_uploader("Importar Mídia", type=['jpg','png','jpeg','mp4','mov'], key="up15_5") if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
 
     if ent:
         with col_viz:
@@ -88,7 +88,7 @@ if m_iri:
                 st.video(ent)
             else:
                 img_raw = Image.open(ent)
-                # IA Trava na Íris automaticamente
+                # IA Trava na Íris automaticamente com nova lógica blindada
                 img_focada = motor_trava_iris_ia(img_raw)
                 img_hd = extrair_qualidade_maxima(img_focada)
                 
@@ -100,10 +100,10 @@ if m_iri:
                 if map_act: img_hd = aplicar_mapa_iridologico(img_hd)
                 
                 st.markdown('<div class="img-container">', unsafe_allow_html=True)
-                st.image(img_hd, caption="Detecção Sentinel Ativa - Íris Centralizada", use_container_width=True)
+                st.image(img_hd, caption="Detecção Sentinel Ativa - Foco no Tecido Iridológico", use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            # --- MOTOR DE RELATÓRIO PDF ---
+            # --- GERADOR DE RELATÓRIO HARVARD ---
             if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
                 pdf = FPDF()
                 pdf.add_page()
@@ -115,19 +115,18 @@ if m_iri:
                 
                 pdf.set_text_color(0, 0, 0)
                 pdf.ln(25)
-                pdf.set_font("Arial", 'B', 12)
                 pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() if nome_p else 'NÃO IDENTIFICADO'}", ln=True)
                 
                 img_hd.save("temp_report.jpg")
                 pdf.image("temp_report.jpg", x=55, y=100, w=100)
                 
-                st.session_state['pdf_bytes_15_4'] = pdf.output(dest='S').encode('latin-1', 'replace')
+                st.session_state['pdf_bytes_15_5'] = pdf.output(dest='S').encode('latin-1', 'replace')
                 st.success("Dossiê gerado com sucesso!")
 
-            if 'pdf_bytes_15_4' in st.session_state:
+            if 'pdf_bytes_15_5' in st.session_state:
                 st.download_button(
                     label="📥 BAIXAR RELATÓRIO PDF",
-                    data=st.session_state['pdf_bytes_15_4'],
+                    data=st.session_state['pdf_bytes_15_5'],
                     file_name=f"HBS_Report_{nome_p}.pdf",
                     mime="application/pdf"
                 )
