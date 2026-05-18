@@ -13,3 +13,7 @@ gTTS
 plotly
 sqlalchemy
 streamlit-drawable-canvas
+langchain
+langchain-community
+langchain-google-genai
+faiss-cpu
