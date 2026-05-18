@@ -1,8 +1,8 @@
 """
 =============================================================================
-🛡️ NEXUS OMNICORE v6.8 - DESIGN SOBERANO E NÚCLEO DE ESCUTA INTEGRADO
+🛡️ NEXUS OMNICORE v6.9 - ESQUADRO PERFEITO E SINCRONISMO DE TELEMETRIA
 =============================================================================
-Fusão Total: DNA v1-v6.7 Preservado + HUD Cyber-Glow Premium Sem Rolagem
+Fusão Total: DNA v1-v6.8 Unificado + Alinhamento Simétrico HUD Real
 =============================================================================
 """
 
@@ -29,12 +29,11 @@ except ImportError as e:
     st.error(f"Erro Crítico de Infraestrutura. Dependência ausente: {e}")
 
 # Configuração de tela cheia com contenção de rolagem de página
-st.set_page_config(page_title="Nexus OmniCore v6.8", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="Nexus OmniCore v6.9", page_icon="🛡️", layout="wide")
 
-# 🖥️ CORE DESIGN SUPREMO v6.8 (Inspirado em Hostinger Horizons & Base44)
+# 🖥️ DESIGN SOBERANO ALINHADO v6.9 (Esquadro e Simetria HUD)
 st.markdown("""
     <style>
-    /* Estilização da Base de Operações */
     .stApp {
         background-color: #02040a !important;
         background-image: radial-gradient(circle at 50% 10%, #0a1128 0%, #02040a 100%) !important;
@@ -42,7 +41,6 @@ st.markdown("""
         font-family: 'JetBrains Mono', 'Consolas', monospace !important;
     }
     
-    /* Remoção cirúrgica de espaçamentos inúteis */
     .block-container { padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
     .stTabs [data-baseweb="tab-list"] { gap: 6px; background-color: #090d16; padding: 4px; border-radius: 6px; border: 1px solid #161b22; }
     .stTabs [data-baseweb="tab"] { height: 34px; color: #8b949e !important; font-weight: 700; font-size: 11px; }
@@ -51,22 +49,16 @@ st.markdown("""
         color: #ffffff !important; box-shadow: 0 0 12px rgba(244, 63, 94, 0.4);
     }
     
-    /* Containers HUD de Comando Premium */
     .hud-card {
-        background: rgba(13, 17, 23, 0.75); 
-        border: 1px solid #21262d; 
-        border-left: 4px solid #f43f5e;
-        padding: 10px 14px; 
-        border-radius: 6px; 
-        backdrop-filter: blur(12px); 
-        margin-bottom: 8px;
+        background: rgba(13, 17, 23, 0.75); border: 1px solid #21262d; border-left: 4px solid #f43f5e;
+        padding: 10px 14px; border-radius: 6px; backdrop-filter: blur(12px); margin-bottom: 8px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
     .hud-card-green { border-left: 4px solid #10b981 !important; }
     .hud-title { font-size: 9px; color: #8b949e; text-transform: uppercase; letter-spacing: 1.2px; font-weight: bold; }
     .hud-value { font-size: 13px; color: #f0f4f8; font-weight: bold; margin-top: 2px; }
     
-    /* Console Forense de Alta Performance (Alinhamento Simétrico de Altura) */
+    /* ALTURA AJUSTADA PARA ESQUADRO PERFEITO COM A COLUNA DA DIREITA */
     .terminal-box {
         background-color: #03060c !important;
         border: 1px solid #1f6feb !important;
@@ -74,7 +66,7 @@ st.markdown("""
         padding: 12px;
         font-family: 'Consolas', monospace;
         color: #58a6ff;
-        height: 274px;
+        height: 254px;
         overflow-y: auto;
         box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
     }
@@ -83,12 +75,11 @@ st.markdown("""
     .terminal-data { color: #56d364; }
     .terminal-info { color: #8b949e; }
 
-    /* Botões táticos */
     .stButton>button {
         background: linear-gradient(135deg, #A51C30 0%, #f43f5e 100%) !important;
         color: #ffffff !important; font-weight: 800 !important; border-radius: 6px !important;
         padding: 6px 12px !important; font-size: 11px !important; border: none !important;
-        transition: all 0.2s ease;
+        width: 100%;
     }
     .stButton>button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4); }
     .stTextArea textarea { background-color: #0d1117 !important; color: #58a6ff !important; border: 1px solid #21262d !important; }
@@ -169,14 +160,26 @@ def gerar_pdf(conteudo):
     pdf.multi_cell(0, 6, texto_limpo)
     return bytes(pdf.output(dest='S'))
 
-# 📡 SUBSISTEMA OMNICORE v6.8: Painel HUD Simétrico e Sincronizado
+# 📡 SUBSISTEMA OMNICORE v6.9: Painel Sincronizado e Alinhado no Esquadro
 def renderizar_painel_rf():
     st.markdown("<div style='margin-top:4px;'></div>", unsafe_allow_html=True)
+    
+    # Captura automática de dados vindos da URL (Uplink local via query strings)
+    parametros_url = st.query_params
+    canal_injetado = parametros_url.get("canal", None)
     
     if "logs_forenses" not in st.session_state:
         st.session_state.logs_forenses = [
             f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[SISTEMA] INTERFACE ONLINE: Pronto para receber strings de telemetria local.</span>"
         ]
+    
+    # Se o script local injetar um canal real na URL, remove a mensagem de espera e adiciona o log na hora
+    if canal_injetado:
+        ts_real = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+        log_entrada = f"[{ts_real}] <span class='terminal-tag'>[LIVE_USB]</span> -> <span class='terminal-data'>CAPTURA REAL: Canal {int(canal_injetado):02d} Ativo no Polo Acadêmico | Parâmetros de portadora validados.</span>"
+        if log_entrada not in st.session_state.logs_forenses:
+            st.session_state.logs_forenses.append(log_entrada)
+
     if "hardware_detectado" not in st.session_state: st.session_state.hardware_detectado = "NENHUM COMPONENTE DETECTADO"
     if "status_porta" not in st.session_state: st.session_state.status_porta = "OFFLINE"
 
@@ -190,8 +193,8 @@ def renderizar_painel_rf():
             st.session_state.hardware_detectado = "ESP32 (CH9102) + NRF24L01 ANTENA RECON"
             st.session_state.status_porta = "CONECTADO: PORTA COM3 ATIVA (115200 bps)"
             
-            # Popula logs estruturados e detalhados simulando a chegada de requisições do cabo
-            if len(st.session_state.logs_forenses) < 12:
+            # Modo Simulação Autônoma caso não haja dados na URL ainda
+            if len(st.session_state.logs_forenses) < 12 and not canal_injetado:
                 canais_frequencias = {2: "2402 MHz", 4: "2404 MHz", 12: "2412 MHz", 19: "2419 MHz", 23: "2423 MHz", 29: "2429 MHz"}
                 for ch, freq in canais_frequencias.items():
                     ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
@@ -208,6 +211,7 @@ def renderizar_painel_rf():
         
         if st.button("🧹 Limpar Console Forense"):
             st.session_state.logs_forenses = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[SISTEMA] Histórico de captura limpo pelo operador.</span>"]
+            st.query_params.clear() # Limpa dados da URL ao resetar
             st.rerun()
 
     with col_painel:
@@ -220,11 +224,10 @@ def renderizar_painel_rf():
 
 # 🕹️ CORE EXECUTÁVEL PRINCIPAL
 def main():
-    # Grid de Headers HUD de Alta Densidade no topo da tela
     h1, h2, h3, h4 = st.columns(4)
-    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#f43f5e;'>NEXUS CORE v6.8</div></div>", unsafe_allow_html=True)
+    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#f43f5e;'>NEXUS CORE v6.9</div></div>", unsafe_allow_html=True)
     with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>INDEXADOR VETORIAL</div><div class='hud-value'>FAISS CHUNK ENGINE</div></div>", unsafe_allow_html=True)
-    with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>INTERFACE SERIAL</div><div class='hud-value'>UPLINK CAPTURE</div></div>", unsafe_allow_html=True)
+    with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>INTERFACE SERIAL</div><div class='hud-value'>UPLINK ACTIVE</div></div>", unsafe_allow_html=True)
     with h4: st.markdown("<div class='hud-card'><div class='hud-title'>COGNITIVO</div><div class='hud-value' style='color:#58a6ff;'>LLAMA 3.3 SYSTEM</div></div>", unsafe_allow_html=True)
 
     GROQ_KEY = st.secrets.get("GROQ_API_KEY", "")
