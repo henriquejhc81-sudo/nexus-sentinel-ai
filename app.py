@@ -1,87 +1,119 @@
 import streamlit as st
 from groq import Groq
-import google.generativeai as genai
-import os
+from duckduckgo_search import DDGS
+import pandas as pd
 
-try:
-    from ghost_engine import GhostEngine
-except ImportError:
-    st.error("Erro: ghost_engine.py ausente!")
+# --- CONFIGURAÇÃO DA PÁGINA E DESIGN ---
+st.set_page_config(page_title="Nexus OmniCode", page_icon="⚡", layout="wide")
 
-# --- CONFIGURAÇÃO E CSS ORIGINAL v5.9/6.1 ---
-st.set_page_config(page_title="Nexus Prime v6.1", page_icon="⚡", layout="wide")
 st.markdown("""
     <style>
-    .main { background-color: #0b0e14; color: #e0e0e0; }
-    .stButton>button { 
-        background: linear-gradient(135deg, #00c853 0%, #00e5ff 100%); 
-        color: #000; font-weight: 800; border-radius: 8px; border: none; height: 3.5em;
-    }
-    .status-box { 
-        padding: 15px; border-radius: 10px; background: #161b22; 
-        border: 1px solid #00c853; box-shadow: inset 0 0 15px rgba(0, 200, 83, 0.2);
-        margin-bottom: 20px; font-family: 'Courier New', monospace;
-    }
+    .main { background-color: #0e1117; }
+    .stButton>button { background-color: #4CAF50; color: white; font-weight: bold; border-radius: 10px; width: 100%; }
+    .stTextArea>div>div>textarea { background-color: #1a1c24; color: #ffffff; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- MOTOR NEURAL (HÍBRIDO) ---
-def nexus_engine_prime(prompt, modo, contexto, engine):
-    try:
-        if engine == "Groq (Ultra-Fast)":
-            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-            comp = client.chat.completions.create(
-                messages=[{"role": "system", "content": f"Nexus Prime. Missão: {modo}. Contexto: {contexto}"}, 
-                          {"role": "user", "content": prompt}],
-                model="llama-3.3-70b-versatile", temperature=0.2)
-            return comp.choices[0].message.content
-        else:
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-pro')
-            return model.generate_content(f"{modo}: {prompt} \nContexto: {contexto}").text
-    except Exception as e:
-        return f"Erro no Motor: {e}"
+# --- SISTEMA DE BLINDAGEM (SENHA) ---
+if 'autenticado' not in st.session_state:
+    st.session_state['autenticado'] = False
 
-# --- SIDEBAR (RESTAURO DE TODAS AS FUNÇÕES) ---
+if not st.session_state['autenticado']:
+    st.title("🔒 Nexus Blindado")
+    senha = st.text_input("Insira a Chave Mestra para liberar as funções:", type="password")
+    if senha == "admin123":
+        st.session_state['autenticado'] = True
+        st.rerun()
+    else:
+        st.warning("Aguardando autenticação...")
+        st.stop()
+
+# --- INICIALIZAÇÃO DA IA (GROQ) ---
+try:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+except Exception:
+    st.error("Erro: Verifique sua GROQ_API_KEY nos Secrets do Streamlit!")
+    st.stop()
+
+# --- FUNÇÃO DE CÉREBRO INTEGRADO ---
+def nexus_process(ideia, modo, contexto_web):
+    prompt_sistema = f"""
+    Você é o Nexus OmniCode, a IA mais avançada do mundo. 
+    Sua missão atual: {modo}.
+    Considere estas informações externas coletadas: {contexto_web}
+    Se o usuário pedir incremento, mantenha a lógica atual e adicione as novas funções solicitadas.
+    Responda em Português com blocos de código formatados.
+    """
+    try:
+        # MODELO CORRIGIDO PARA VERSÃO ESTÁVEL
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": prompt_sistema},
+                {"role": "user", "content": ideia},
+            ],
+            model="llama-3.1-70b-versatile",
+            temperature=0.2,
+        )
+        return chat_completion.choices.message.content
+    except Exception as e:
+        return f"Erro na conexão com a IA: {e}"
+
+# --- BARRA LATERAL (FILTROS E INTEGRAÇÕES) ---
 with st.sidebar:
-    st.title("🛡️ NEXUS PRIME")
-    st.caption("v6.1 | RECON & STRIKE")
-    
-    with st.expander("🧬 DNA & Módulos", expanded=True):
-        genesis_on = st.toggle("Gênesis Creator", value=False)
-        legacy_on = st.toggle("Legacy Protector", value=True)
-        ghost_mode = st.toggle("Ghost Stealth (AES-256)", value=False)
+    st.title("🔗 Nexus Integrations")
+    st.subheader("Sistemas Monitorados")
+    for app in ["GitLab (DevSecOps)", "Bitbucket", "Azure DevOps", "Gitea", "SourceForge", "FastAPI"]:
+        st.toggle(app, value=True)
     
     st.divider()
-    ia_provider = st.selectbox("Engine Neural", ["Groq (Ultra-Fast)", "Gemini Pro"])
-    modo = st.selectbox("🎯 Neural Target", ["Recon & Strike", "Genesis: Arquitetura", "Due Diligence"])
+    # NOVA FUNÇÃO INCLUÍDA: "Incremento Mágico"
+    modo = st.selectbox("🎯 Função Principal", [
+        "Criar código do zero", 
+        "Corrigir erros e bugs", 
+        "Incremento Mágico (Adicionar Novas Funções)", 
+        "Analisar performance", 
+        "Aprimorar código existente"
+    ])
 
 # --- ÁREA PRINCIPAL ---
-st.title("⚡ Nexus Prime Engine")
-st.markdown(f"<div class='status-box'><b>STATUS:</b> VIGILANTE | <b>GHOST:</b> {'ATIVO' if ghost_mode else 'OFF'} | <b>LEGACY:</b> {'ON' if legacy_on else 'OFF'}</div>", unsafe_allow_html=True)
+st.title("⚡ Nexus OmniCode")
+st.caption("Automação de Análise, Correção e Criação Universal")
 
-col_in, col_out = st.columns([1, 1.2])
+col_in, col_out = st.columns(2)
 
 with col_in:
-    st.subheader("📥 Missão Sniper")
-    user_input = st.text_area("Descreva a missão ou cole o log:", height=300)
-    
-    if st.button("EXECUTAR NEXUS PRIME"):
-        recon_final = ""
-        if ghost_mode:
-            try:
-                ghost = GhostEngine()
-                recon_final = f"{ghost.scan_local_credentials()} | {ghost.shadow_cookie_scan()}"
-                st.success("👻 Ghost Recon & Shadow-Cookie Ativos!")
-            except:
-                st.error("Erro na Chave .key!")
-        
-        with st.spinner("Sintetizando..."):
-            res = nexus_engine_prime(user_input, modo, recon_final, ia_provider)
-            st.session_state['last_res'] = res
+    st.subheader("📥 Entrada de Dados")
+    user_input = st.text_area("Descreva sua ideia, cole o código ou peça o incremento:", height=300, placeholder="Ex: [Cole seu código aqui] e escreva: 'Adicione uma função de envio de e-mail'...")
+    upload = st.file_uploader("Upload de arquivo para análise", type=['py', 'js', 'html', 'txt', 'sql'])
 
 with col_out:
-    st.subheader("🚀 Resposta Mestra")
-    if 'last_res' in st.session_state:
-        st.markdown(st.session_state['last_res'])
-        st.download_button("📥 Baixar Projeto", st.session_state['last_res'], file_name="nexus_output.md")
+    st.subheader("🚀 Resultado da IA Personalizada")
+    if st.button("EXECUTAR ANÁLISE GLOBAL"):
+        if user_input:
+            with st.spinner("Nexus acessando bases globais para a evolução do código..."):
+                contexto = ""
+                try:
+                    with DDGS() as ddgs:
+                        search_results = [r['body'] for r in ddgs.text(f"melhores práticas e funções para: {user_input}", max_results=2)]
+                        contexto = "\n".join(search_results)
+                except:
+                    contexto = "Usando base interna."
+
+                resultado_final = nexus_process(user_input, modo, contexto)
+                st.markdown(resultado_final)
+                
+                st.download_button(
+                    label="📥 Baixar Código Nexus",
+                    data=resultado_final,
+                    file_name="nexus_output.txt",
+                    mime="text/plain"
+                )
+        else:
+            st.error("O campo de entrada está vazio!")
+
+# --- BIBLIOTECA DE COMANDOS ---
+st.divider()
+with st.expander("📚 Biblioteca de Comandos Copie e Cole"):
+    st.code("Nexus, use o Incremento Mágico para adicionar um sistema de login neste código.")
+    st.code("Nexus, analise este código e gere uma versão aprimorada sem erros.")
+    st.code("Crie uma automação que leia arquivos e faça upload para o Azure.")
