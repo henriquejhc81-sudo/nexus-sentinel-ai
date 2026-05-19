@@ -1,137 +1,120 @@
 import streamlit as st
-from groq import Groq
-from duckduckgo_search import DDGS
-import time
-import random
+import datetime
+import cv2
+import numpy as np
+from PIL import Image
+from fpdf import FPDF
+from engine import * 
 
-# --- CONFIGURAÇÃO DA PÁGINA E DESIGN CYBER-SENTINEL ---
-st.set_page_config(page_title="Nexus Sentinel v5.3", page_icon="🛡️", layout="wide")
+# --- CONFIGURAÇÃO DE UI (PRESERVADA) ---
+st.set_page_config(page_title="IRIDOLOGIA & IRISDIAGNOSE", layout="wide", page_icon="🔬")
 
 st.markdown("""
     <style>
-    .main { background-color: #0b0e14; color: #e0e0e0; }
-    .stButton>button { 
-        background: linear-gradient(135deg, #00c853 0%, #b2ff59 100%); 
-        color: #000; font-weight: 800; border-radius: 8px; border: none; transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+    .stApp { background: radial-gradient(circle at top right, #1a1c2c, #0d0d0d); }
+    .main-title {
+        color: #A51C30; font-family: 'Inter', sans-serif; font-size: 38px; font-weight: 800;
+        border-left: 5px solid #1e3a8a; padding-left: 15px; margin-bottom: 30px;
     }
-    .status-box { 
-        padding: 15px; border-radius: 10px; background: #161b22; 
-        border: 1px solid #00c853; box-shadow: inset 0 0 10px rgba(0, 200, 83, 0.1);
-        margin-bottom: 20px; font-family: 'Courier New', Courier, monospace;
-    }
+    .img-container { border: 2px solid #1e3a8a; border-radius: 10px; overflow: hidden; background: #000; }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- MOTOR DE IA COM BLINDAGEM ANTI-ERRO 429 ---
-def nexus_agent_call(prompt, modo, contexto):
-    try:
-        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-    except:
-        return "Erro: Chave API ausente nos Secrets!"
+# --- FUNÇÃO DE AUTO-AJUSTE CORRIGIDA (v14.3) ---
+def auto_ajuste_forense(imagem_pil):
+    """
+    Detecta a íris e centraliza a imagem. 
+    FIX: Correção do erro de comparação de array (ValueError).
+    """
+    img_cv = cv2.cvtColor(np.array(imagem_pil), cv2.COLOR_RGB2BGR)
+    h, w = img_cv.shape[:2] # Pega altura e largura separadamente
+    
+    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.medianBlur(gray, 5)
+    circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1, 200, param1=50, param2=30, minRadius=50, maxRadius=300)
+    
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        # Pega o primeiro círculo detectado
+        cx, cy, cr = circles[0][0]
         
-    max_retries = 5 # Aumentado para maior persistência
-    for attempt in range(max_retries):
-        try:
-            prompt_sistema = f"""
-            Você é o Nexus Sentinel 5.3. Missão: {modo}.
-            DIRETRIZ OBRIGATÓRIA: Em QUALQUER projeto, inclua um '🛡️ MÓDULO DE SEGURANÇA' com Logs de Invasão e proteção contra intrusos.
+        margem = int(cr * 1.8)
+        # Correção: Agora comparando valores individuais (inteiros)
+        y1, y2 = max(0, int(cy) - margem), min(h, int(cy) + margem)
+        x1, x2 = max(0, int(cx) - margem), min(w, int(cx) + margem)
+        
+        crop = img_cv[y1:y2, x1:x2]
+        if crop.size > 0:
+            return Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
             
-            MODO ARQUITETO:
-            1. '🛠️ SETUP'
-            2. '📁 ESTRUTURA'
-            3. '🚀 CÓDIGO COMPLETO'
-            
-            Responda em Português.
-            """
-            completion = client.chat.completions.create(
-                messages=[{"role": "system", "content": prompt_sistema}, {"role": "user", "content": prompt}],
-                model="llama-3.3-70b-versatile",
-                temperature=0.1,
-            )
-            return completion.choices[0].message.content
-            
-        except Exception as e:
-            error_msg = str(e)
-            if "429" in error_msg:
-                # ESTRATÉGIA ANTI-BLOQUEIO: Espera progressiva
-                wait_time = (attempt + 1) * 8 
-                st.warning(f"🛡️ Nexus detectou Limite de Cota (429). Ativando Auto-Healing... Aguarde {wait_time}s")
-                time.sleep(wait_time)
-            else:
-                return f"Erro Crítico no Sentinel: {e}"
-    return "O Nexus não conseguiu furar o bloqueio da API após 5 tentativas. Tente reduzir o tamanho do pedido."
+    return imagem_pil
 
-# --- BARRA LATERAL (ESTRUTURA MANTIDA) ---
+st.markdown("<div class='main-title'>IRIDOLOGIA E IRISDIAGNOSE</div>", unsafe_allow_html=True)
+
+# --- DASHBOARD (CAMPOS LIMPOS) ---
+with st.expander("👤 DASHBOARD DO PACIENTE", expanded=True):
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: nome_p = st.text_input("NOME COMPLETO", value="")
+    with c2: idade_p = st.text_input("IDADE", value="")
+    with c3: peso_p = st.text_input("PESO (KG)", value="")
+    with c4: altura_p = st.text_input("ALTURA (M)", value="")
+
+# --- COMMAND CENTER ---
 with st.sidebar:
-    st.title("🛡️ Nexus Sentinel")
-    st.caption("v5.3 | Anti-Lock Mode")
-    
+    st.markdown("<h2 style='color: #A51C30;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
+    m_iri = st.toggle("🔬 Módulo Iridologia Master", value=False)
+    m_super = st.toggle("🧠 Orquestração Neural IA", value=False)
+    m_der = st.toggle("📸 SkinAI v2 Pro", value=False)
+    m_rad = st.toggle("📂 Radiologia Digital", value=False)
     st.divider()
-    with st.expander("🚀 Superpoderes Ativos", expanded=True):
-        st.toggle("Segurança Nativa em Tudo", value=True)
-        st.toggle("Auto-Healing Anti-429", value=True)
-        st.toggle("Modo Arquiteto", value=True)
-        st.toggle("Live Preview", value=True)
+    st.caption("Genesis Forensic AI Engine v14.3")
 
-    st.divider()
-    st.subheader("🔗 DevSecOps")
-    for app in ["GitLab", "GitHub", "Azure DevOps", "Slack/Notion"]:
-        st.toggle(app, value=True)
+# --- ESTAÇÃO MASTER ---
+if m_iri:
+    st.subheader("🔬 ESTAÇÃO IRIDOLOGIA MASTER")
+    col_input, col_viz = st.columns([1, 1.2], gap="large")
     
-    modo = st.selectbox("🎯 Modo do Agente", [
-        "Projeto do Zero (Modo Arquiteto)",
-        "Incremento Mágico + Testes",
-        "Análise de Vulnerabilidades",
-        "Design-to-Code"
-    ])
+    with col_input:
+        f = st.radio("MODALIDADE DE ENTRADA", ["📁 ARQUIVO/VÍDEO", "📸 CÂMERA LIVE"], horizontal=True)
+        ent = st.file_uploader("Upload", type=['jpg','png','jpeg','mp4','mov']) if f == "📁 ARQUIVO/VÍDEO" else st.camera_input("Scanner")
 
-# --- ÁREA PRINCIPAL ---
-st.title("⚡ Nexus OmniCode Sentinel")
-st.markdown("<div class='status-box'><b>STATUS:</b> PROTEGIDO | <b>ANTI-429:</b> ATIVO | <b>SEGURANÇA:</b> INTEGRAL</div>", unsafe_allow_html=True)
-
-col_in, col_out = st.columns([1, 1.2])
-
-with col_in:
-    st.subheader("📥 Missão")
-    user_input = st.text_area("Descreva seu projeto (Segurança incluída automaticamente):", height=300)
-    upload = st.file_uploader("Contexto (Opcional)", accept_multiple_files=True)
-
-with col_out:
-    st.subheader("🚀 Entrega Sentinel")
-    if st.button("ATIVAR NEXUS SENTINEL"):
-        if user_input:
-            with st.spinner("Sentinel rompendo bloqueios de cota e processando..."):
-                try:
-                    with DDGS() as ddgs:
-                        busca = [r['body'] for r in ddgs.text(f"security architecture for {user_input}", max_results=2)]
-                        contexto = "\n".join(busca)
-                except:
-                    contexto = "Base interna de elite."
-                
-                resultado = nexus_agent_call(user_input, modo, contexto)
-                st.session_state['last_result'] = resultado
-        else:
-            st.error("Diga ao Nexus o que construir.")
-
-    if 'last_result' in st.session_state:
-        resultado = st.session_state['last_result']
-        tab1, tab2 = st.tabs(["💻 Plano e Código", "🖼️ Live Preview"])
-        with tab1:
-            st.markdown(resultado)
-        with tab2:
-            if "<html>" in resultado.lower() or "<!doctype html>" in resultado.lower():
-                st.components.v1.html(resultado, height=500, scrolling=True)
+    if ent:
+        with col_viz:
+            if hasattr(ent, 'type') and 'video' in ent.type:
+                st.video(ent)
             else:
-                st.info("Aguardando código HTML...")
+                img_raw = Image.open(ent)
+                # Execução do Auto-Ajuste corrigido
+                img_ajustada = auto_ajuste_forense(img_raw)
+                img_hd = extrair_qualidade_maxima(img_ajustada)
+                
+                t1, t2 = st.columns(2)
+                with t1: zoom = st.checkbox("🔍 Zoom Analítico", value=True)
+                with t2: map_iris = st.checkbox("🗺️ Jensen Overlay")
+                
+                if zoom: img_hd = aplicar_zoom_inteligente(img_hd)
+                if map_iris: img_hd = aplicar_mapa_iridologico(img_hd)
+                
+                st.markdown('<div class="img-container">', unsafe_allow_html=True)
+                st.image(img_hd, caption="Processamento Sentinel - Alinhamento Estabilizado", use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        st.divider()
-        formato_ext = st.selectbox("Formato:", [".py", ".html", ".js", ".txt"], key="f_selector")
-        st.download_button(label=f"BAIXAR PROJETO ({formato_ext})", data=resultado, file_name=f"nexus_sentinel_v53{formato_ext}")
-
-st.divider()
-st.subheader("💬 Nexus Sentinel Chat")
-chat_input = st.text_input("Dúvida? Pergunte aqui:")
-if chat_input and 'last_result' in st.session_state:
-    with st.chat_message("assistant"):
-        st.markdown(nexus_agent_call(f"Sobre o projeto: {st.session_state['last_result']}. Pergunta: {chat_input}", "Chat Suporte", ""))
+            if st.button("⚡ GENERATE HARVARD EXECUTIVE REPORT"):
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_fill_color(165, 28, 48)
+                pdf.rect(0, 0, 210, 35, 'F')
+                pdf.set_text_color(255, 255, 255)
+                pdf.set_font("Arial", 'B', 20)
+                pdf.cell(0, 15, "IRISDIAGNOSE CLINICAL REPORT", ln=True, align='C')
+                
+                pdf.set_text_color(0, 0, 0)
+                pdf.ln(25)
+                pdf.cell(0, 10, f"PACIENTE: {nome_p.upper() or 'NÃO IDENTIFICADO'}", ln=True)
+                
+                # Salva imagem para o PDF
+                img_hd.save("temp_report.jpg")
+                pdf.image("temp_report.jpg", x=55, y=100, w=100)
+                
+                st.success("Dossiê gerado com sucesso!")
+                st.download_button("📥 BAIXAR RELATÓRIO", data=pdf.output(dest='S').encode('latin-1'), file_name=f"HBS_Report_{nome_p}.pdf")
