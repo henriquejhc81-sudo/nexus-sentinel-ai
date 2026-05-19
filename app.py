@@ -1,9 +1,9 @@
 """
 =============================================================================
-🛡️ NEXUS OMNICORE v7.5 - HYDRA CORE (DATA LAKE & PERFECT SYNC)
+🛡️ NEXUS OMNICORE v8.0 - OMNI-PROTOCOL & TIME-SYNC PERFECTED
 =============================================================================
-Fusão Suprema: DNA Histórico Preservado + Banco de Dados SQLite + Sincronia NTFY
-A nuvem agora tem memória permanente e puxa o histórico dos satélites.
+Fusão Suprema: Correção absoluta de Timezone, Banco de Dados persistente,
+e motor universal preparado para aceitar módulos futuros (RS232/USB/ETH).
 =============================================================================
 """
 
@@ -33,28 +33,28 @@ try:
 except ImportError as e:
     st.error(f"Erro Crítico. Dependência ausente: {e}")
 
-st.set_page_config(page_title="Nexus v7.5 Hydra", page_icon="🐉", layout="wide")
+st.set_page_config(page_title="Nexus v8.0 Omni", page_icon="🐉", layout="wide")
 
 # --- BANCO DE DADOS DA HIDRA (MEMÓRIA PERSISTENTE) ---
 def init_db():
     conn = sqlite3.connect('nexus_datalake.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS radar_logs 
-                 (id_sinal TEXT PRIMARY KEY, canal TEXT, timestamp TEXT)''')
+                 (id_sinal TEXT PRIMARY KEY, tipo TEXT, payload TEXT, timestamp TEXT)''')
     conn.commit()
     conn.close()
 
-def salvar_no_db(id_sinal, canal, timestamp):
+def salvar_no_db(id_sinal, tipo, payload, timestamp):
     conn = sqlite3.connect('nexus_datalake.db')
     c = conn.cursor()
-    c.execute("INSERT OR IGNORE INTO radar_logs (id_sinal, canal, timestamp) VALUES (?, ?, ?)", (id_sinal, canal, timestamp))
+    c.execute("INSERT OR IGNORE INTO radar_logs (id_sinal, tipo, payload, timestamp) VALUES (?, ?, ?, ?)", (id_sinal, tipo, str(payload), timestamp))
     conn.commit()
     conn.close()
 
 def carregar_do_db():
     conn = sqlite3.connect('nexus_datalake.db')
     c = conn.cursor()
-    c.execute("SELECT id_sinal, canal, timestamp FROM radar_logs ORDER BY timestamp DESC LIMIT 50")
+    c.execute("SELECT id_sinal, tipo, payload, timestamp FROM radar_logs ORDER BY timestamp DESC LIMIT 50")
     linhas = c.fetchall()
     conn.close()
     return linhas
@@ -64,46 +64,21 @@ init_db()
 # 🖥️ DESIGN SOBERANO (HUD Balanceado)
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #02040a !important;
-        background-image: radial-gradient(circle at 50% 10%, #0a1128 0%, #02040a 100%) !important;
-        color: #f0f4f8 !important;
-        font-family: 'JetBrains Mono', 'Consolas', monospace !important;
-    }
-    
+    .stApp { background-color: #02040a !important; background-image: radial-gradient(circle at 50% 10%, #0a1128 0%, #02040a 100%) !important; color: #f0f4f8 !important; font-family: 'JetBrains Mono', 'Consolas', monospace !important; }
     .block-container { padding-top: 2rem !important; padding-bottom: 1rem !important; max-width: 95% !important;}
-    
     .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #090d16; padding: 6px; border-radius: 6px; border: 1px solid #161b22; }
     .stTabs [data-baseweb="tab"] { height: 36px; color: #8b949e !important; font-weight: 700; font-size: 11px; }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #A51C30 0%, #8b5cf6 100%) !important;
-        color: #ffffff !important; box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
-    }
-    
-    .hud-card {
-        background: rgba(13, 17, 23, 0.75); border: 1px solid #21262d; border-left: 4px solid #8b5cf6;
-        padding: 12px 14px; border-radius: 6px; backdrop-filter: blur(12px); margin-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    }
+    .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #A51C30 0%, #8b5cf6 100%) !important; color: #ffffff !important; box-shadow: 0 0 12px rgba(139, 92, 246, 0.4); }
+    .hud-card { background: rgba(13, 17, 23, 0.75); border: 1px solid #21262d; border-left: 4px solid #8b5cf6; padding: 12px 14px; border-radius: 6px; backdrop-filter: blur(12px); margin-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
     .hud-card-green { border-left: 4px solid #10b981 !important; }
     .hud-title { font-size: 9px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
     .hud-value { font-size: 14px; color: #f0f4f8; font-weight: bold; margin-top: 4px; }
-    
-    .terminal-box {
-        background-color: #03060c !important; border: 1px solid #1f6feb !important; border-radius: 6px;
-        padding: 12px; font-family: 'Consolas', monospace; color: #58a6ff; height: 260px; overflow-y: auto;
-        box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
-    }
+    .terminal-box { background-color: #03060c !important; border: 1px solid #1f6feb !important; border-radius: 6px; padding: 12px; font-family: 'Consolas', monospace; color: #58a6ff; height: 280px; overflow-y: auto; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
     .terminal-line { margin-bottom: 5px; font-size: 11.5px; border-bottom: 1px solid rgba(31,111,235,0.05); padding-bottom: 2px; }
     .terminal-tag { color: #f43f5e; font-weight: bold; }
     .terminal-data { color: #56d364; }
     .terminal-info { color: #8b949e; }
-    
-    .stButton>button {
-        background: linear-gradient(135deg, #A51C30 0%, #8b5cf6 100%) !important;
-        color: #ffffff !important; font-weight: 800 !important; border-radius: 6px !important;
-        padding: 10px 12px !important; font-size: 12px !important; border: none !important; width: 100%;
-        margin-top: 5px;
-    }
+    .stButton>button { background: linear-gradient(135deg, #A51C30 0%, #8b5cf6 100%) !important; color: #ffffff !important; font-weight: 800 !important; border-radius: 6px !important; padding: 10px 12px !important; font-size: 12px !important; border: none !important; width: 100%; margin-top: 5px; }
     .stButton>button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
     .stTextArea textarea { background-color: #0d1117 !important; color: #58a6ff !important; border: 1px solid #21262d !important; }
     </style>
@@ -128,7 +103,7 @@ def omni_extractor(arquivos_upados, gemini_key):
             elif name.endswith('.docx'): texto_extraido += docx2txt.process(io.BytesIO(fb))
             elif name.endswith(('.png', '.jpg', '.jpeg')) and gemini_key:
                 genai.configure(api_key=gemini_key)
-                texto_extraido += genai.GenerativeModel('gemini-1.5-flash').generate_content(["Descreva técnica e textualmente a imagem de forma minuciosa.", Image.open(io.BytesIO(fb))]).text
+                texto_extraido += genai.GenerativeModel('gemini-1.5-flash').generate_content(["Descreva técnica e textualmente a imagem.", Image.open(io.BytesIO(fb))]).text
         except: pass
     return pii_anonymizer(texto_extraido)
 
@@ -150,21 +125,17 @@ class HydraEngine:
         if self.groq_key:
             client = Groq(api_key=self.groq_key)
             try:
-                return client.chat.completions.create(
-                    messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
-                    model="llama-3.3-70b-versatile", temperature=0.2
-                ).choices[0].message.content
+                return client.chat.completions.create(messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}], model="llama-3.3-70b-versatile", temperature=0.2).choices[0].message.content
             except Exception as e:
                 if self.gemini_key:
                     try:
                         genai.configure(api_key=self.gemini_key)
                         return genai.GenerativeModel('gemini-1.5-pro-latest').generate_content(f"{system}\n\n{prompt}").text
                     except: pass
-                
         try:
             with DDGS() as ddgs:
                 search = [r['body'] for r in ddgs.text(f"solução para: {prompt[:50]}", max_results=2)]
-                return f"[MODO EMERGÊNCIA DDGS]: A IA falhou. Dados recuperados da rede global:\n" + "\n".join(search)
+                return f"[MODO EMERGÊNCIA DDGS]: A IA falhou. Dados recuperados:\n" + "\n".join(search)
         except: return "Erro Crítico: A Hidra foi suprimida. Nenhuma API respondeu."
 
 def gerar_pdf(conteudo):
@@ -180,7 +151,13 @@ def gerar_pdf(conteudo):
     pdf.multi_cell(0, 6, conteudo.encode('latin-1', 'replace').decode('latin-1'))
     return bytes(pdf.output(dest='S'))
 
-# 📡 TERMINAL HARDWARE (DATA LAKE & NTFY SYNC)
+# 📡 TERMINAL HARDWARE (OMNI-PROTOCOL & TIME-SYNC FIX)
+def formatar_log(tipo, payload, ts):
+    if tipo == "RF_SCAN":
+        return f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>ALVO RF: Canal {int(payload):02d} Interceptado via Nuvem!</span>"
+    else:
+        return f"[{ts}] <span class='terminal-tag' style='color:#facc15;'>[OMNI_SERIAL]</span> -> <span class='terminal-info'>DADO BRUTO: {payload}</span>"
+
 def renderizar_painel_rf():
     st.markdown("<div style='margin-top:4px;'></div>", unsafe_allow_html=True)
     
@@ -188,56 +165,62 @@ def renderizar_painel_rf():
         st.session_state.ids_processados = set()
     if "logs_rf" not in st.session_state:
         st.session_state.logs_rf = []
-        # Carrega o histórico do Banco de Dados ao iniciar
         historico = carregar_do_db()
         if not historico:
-            st.session_state.logs_rf.append(f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] UPLINK NTFY ONLINE: Aguardando telemetria...</span>")
+            st.session_state.logs_rf.append(f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] UPLINK OMNI ONLINE: Escutando portas seriais...</span>")
         else:
             for rec in reversed(historico):
                 st.session_state.ids_processados.add(rec[0])
-                st.session_state.logs_rf.append(f"[{rec[2]}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA VERIFICADA: Canal {int(rec[1]):02d} Interceptado via Nuvem!</span>")
+                st.session_state.logs_rf.append(formatar_log(rec[1], rec[2], rec[3]))
 
     c1, c2 = st.columns([2.6, 1.4])
     with c2:
-        modo_auto = st.toggle("🔌 LEITURA AUTOMÁTICA DE HARDWARE", value=True)
-        hw = "ESP32 + NRF24L01 HYDRA" if modo_auto else "NENHUM COMPONENTE DETECTADO"
-        st_porta = "COM3 ATIVA (UPLINK SECURE)" if modo_auto else "OFFLINE"
+        modo_auto = st.toggle("🔌 LEITURA UNIVERSAL DE HARDWARE", value=True)
+        hw = "HUB MULTI-PROTOCOLO (RF/USB/RS232)" if modo_auto else "NENHUM COMPONENTE DETECTADO"
+        st_porta = "COM ATIVA (UPLINK SECURE)" if modo_auto else "OFFLINE"
         
         c_btn1, c_btn2 = st.columns(2)
         with c_btn1:
             if st.button("🔄 Sincronizar Radar"):
                 if modo_auto:
                     try:
-                        # Agora ele puxa todas as mensagens dos últimos 10 minutos! Sem erro de timing.
-                        res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=10m](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=10m)", timeout=4)
+                        # FIX DE TIMEZONE: Busca todo o cache recente ignorando o tempo do computador
+                        res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1)", timeout=5)
                         if res.status_code == 200:
                             linhas = res.text.strip().split('\n')
                             for linha in linhas:
                                 if not linha: continue
                                 try:
-                                    dados = json.loads(linha)
-                                    if dados.get("event") == "message":
-                                        canal = dados.get("message")
-                                        id_sinal = dados.get("id")
+                                    dados_ntfy = json.loads(linha)
+                                    if dados_ntfy.get("event") == "message":
+                                        id_sinal = dados_ntfy.get("id")
                                         
                                         if id_sinal not in st.session_state.ids_processados:
                                             st.session_state.ids_processados.add(id_sinal)
                                             ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-                                            # Salva na tela e no banco de dados eterno!
-                                            salvar_no_db(id_sinal, canal, ts)
-                                            log_real = f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA VERIFICADA: Canal {int(canal):02d} Interceptado via Nuvem!</span>"
-                                            st.session_state.logs_rf.append(log_real)
+                                            
+                                            # Tenta decodificar o novo pacote Universal
+                                            try:
+                                                payload_json = json.loads(dados_ntfy.get("message"))
+                                                tipo = payload_json.get("tipo", "GENERIC_SERIAL")
+                                                dado_real = payload_json.get("payload", "")
+                                            except:
+                                                # Fallback para pacotes antigos do v7.4
+                                                tipo = "RF_SCAN"
+                                                dado_real = dados_ntfy.get("message")
+                                            
+                                            salvar_no_db(id_sinal, tipo, str(dado_real), ts)
+                                            st.session_state.logs_rf.append(formatar_log(tipo, dado_real, ts))
                                 except: pass
                     except: pass
                 st.rerun() 
                 
         with c_btn2:
             if st.button("🧹 Limpar Console"): 
-                # Limpa a tela (mas o BD continua seguro)
                 st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] Memória visual apagada (DB Seguro).</span>"]
                 st.rerun()
 
-        st.markdown(f"<div class='hud-card'><div class='hud-title'>COMPONENTE</div><div class='hud-value' style='color:#58a6ff;'>{hw}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='hud-card'><div class='hud-title'>ARQUITETURA FÍSICA</div><div class='hud-value' style='color:#58a6ff;'>{hw}</div></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='hud-card'><div class='hud-title'>STATUS DA PONTE</div><div class='hud-value' style='color:#56d364;'>{st_porta}</div></div>", unsafe_allow_html=True)
 
     with c1:
@@ -247,24 +230,24 @@ def renderizar_painel_rf():
 # 🕹️ CORE PRINCIPAL
 def main():
     h1, h2, h3, h4 = st.columns(4)
-    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>HYDRA CORE v7.5</div></div>", unsafe_allow_html=True)
+    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>NEXUS OMNI v8.0</div></div>", unsafe_allow_html=True)
     with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>DATA LAKE DB</div><div class='hud-value'>SQLITE ANCORADO</div></div>", unsafe_allow_html=True)
-    with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>UPLINK IOT ACTIVE</div></div>", unsafe_allow_html=True)
+    with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>OMNI-PROTOCOL ACTIVE</div></div>", unsafe_allow_html=True)
     with h4: st.markdown("<div class='hud-card'><div class='hud-title'>COGNITIVO</div><div class='hud-value' style='color:#58a6ff;'>GROQ + GEMINI</div></div>", unsafe_allow_html=True)
 
     G_KEY = st.secrets.get("GROQ_API_KEY", "")
     GEM_KEY = st.secrets.get("GEMINI_API_KEY", "")
     hydra = HydraEngine(G_KEY, GEM_KEY)
     
-    t_auditoria, t_strike, t_rf = st.tabs(["🧠 AUDITORIA MULTI-AGENTE & INCEPTION", "💀 PROTOCOLO RECON & STRIKE", "📡 TERMINAL HARDWARE (USB)"])
+    t_auditoria, t_strike, t_rf = st.tabs(["🧠 AUDITORIA MULTI-AGENTE", "💀 PROTOCOLO RECON & STRIKE", "📡 TERMINAL OMNI-HARDWARE (USB/RS232)"])
     
     with t_auditoria:
         st.markdown("<br>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns([2.5, 1, 1.2]) 
         with c1: 
-            comando = st.text_area("⌨️ PROTOCOLO DE ALVO:", height=150, key="txt_auditoria", placeholder="Defina o alvo, cole o código ou descreva a arquitetura desejada...")
+            comando = st.text_area("⌨️ PROTOCOLO DE ALVO:", height=150, placeholder="Defina o alvo, cole o código ou descreva a arquitetura desejada...")
         with c2: 
-            arquivos = st.file_uploader("📂 EVIDÊNCIAS:", accept_multiple_files=True, key="up_aud")
+            arquivos = st.file_uploader("📂 EVIDÊNCIAS:", accept_multiple_files=True)
         with c3:
             modo_auditoria = st.selectbox("🎯 DIRETRIZ DA MISSÃO:", ["Forense (Red vs Blue Team)", "Arquiteto (Geração Inception DNA)"])
             st.markdown("<div style='margin-top:14px;'></div>", unsafe_allow_html=True)
@@ -274,38 +257,38 @@ def main():
                     
                     if "Forense" in modo_auditoria:
                         with concurrent.futures.ThreadPoolExecutor() as exec:
-                            r_red = exec.submit(hydra.strike, "Red Team. Ataque impiedosamente a arquitetura e ache falhas.", f"Alvo: {comando}\nContexto: {ctx}").result()
-                            r_blue = exec.submit(hydra.strike, "Blue Team. Defenda, proponha arquiteturas e corrija as falhas.", f"Alvo: {comando}\nContexto: {ctx}").result()
-                        dossie = hydra.strike("Sintetize um Relatório Forense Final detalhado e executivo.", f"RED:\n{r_red}\n\nBLUE:\n{r_blue}")
+                            r_red = exec.submit(hydra.strike, "Red Team. Ataque a arquitetura.", f"Alvo: {comando}\nContexto: {ctx}").result()
+                            r_blue = exec.submit(hydra.strike, "Blue Team. Defenda e corrija.", f"Alvo: {comando}\nContexto: {ctx}").result()
+                        dossie = hydra.strike("Sintetize um Relatório Executivo.", f"RED:\n{r_red}\n\nBLUE:\n{r_blue}")
                         st.markdown(dossie)
-                        st.download_button("📥 BAIXAR RELATÓRIO TÁTICO (PDF)", gerar_pdf(dossie), file_name="Hydra_Dossie.pdf")
+                        st.download_button("📥 BAIXAR RELATÓRIO TÁTICO", gerar_pdf(dossie), file_name="Hydra_Dossie.pdf")
                     else:
-                        laudo_direto = hydra.strike("Aja como um Arquiteto de Software Sênior. Gere código e documentação estruturada impecável.", f"Diretriz: {comando}\nContexto: {ctx}")
-                        st.markdown(laudo_direto)
+                        laudo = hydra.strike("Aja como Arquiteto de Software Sênior. Gere código limpo.", f"Diretriz: {comando}\nContexto: {ctx}")
+                        st.markdown(laudo)
 
     with t_strike:
         st.markdown("<br>", unsafe_allow_html=True)
         c_in, c_opt = st.columns([2, 1])
-        with c_in: m_strike = st.text_area("Alvo para Criação de Código Web (Live) ou IP/Log para Denúncia:", height=130, key="txt_strike")
+        with c_in: m_strike = st.text_area("Alvo para Criação de Código Web (Live) ou Denúncia:", height=130)
         with c_opt: 
-            modo_s = st.selectbox("Ação:", ["Web Developer (Live Preview)", "Relatório de Denúncia Forense IP"])
+            modo_s = st.selectbox("Ação:", ["Web Developer (Live Preview)", "Relatório de Denúncia IP"])
             st.markdown("<div style='margin-top:14px;'></div>", unsafe_allow_html=True)
             if st.button("💀 EXECUTAR STRIKE PROTOCOL"):
-                with st.spinner("Acionando rastreamento/desenvolvimento..."):
+                with st.spinner("Processando..."):
                     if "Web" in modo_s:
-                        res = hydra.strike("Crie código de altíssima qualidade. Junte HTML, CSS e JS em um único bloco <html>.", m_strike)
+                        res = hydra.strike("Crie código de altíssima qualidade HTML/CSS/JS.", m_strike)
                         st.session_state['strike_code'] = res
                     else:
-                        res = hydra.strike("PROTOCOLO STRIKE ATIVO: Identifique o IP, rastreie origem e gere um relatório de denúncia forense para autoridades.", m_strike)
-                        st.error("⚠️ AVISO FORENSE GERADO. REVISE AS INFORMAÇÕES.")
+                        res = hydra.strike("Identifique o IP, rastreie origem e gere relatório de denúncia.", m_strike)
+                        st.error("⚠️ AVISO FORENSE GERADO.")
                         st.markdown(res)
                         
         if 'strike_code' in st.session_state and "Web" in modo_s:
-            tab_c, tab_v = st.tabs(["💻 Código Fonte", "🖼️ Live Preview (Renderização Real)"])
+            tab_c, tab_v = st.tabs(["💻 Código Fonte", "🖼️ Live Preview"])
             with tab_c: 
                 st.markdown(st.session_state['strike_code'])
-                formato = st.selectbox("Exportar código como:", [".py", ".html", ".js", ".txt"])
-                st.download_button(f"📥 BAIXAR ({formato})", st.session_state['strike_code'], file_name=f"hydra_code{formato}")
+                formato = st.selectbox("Exportar como:", [".py", ".html", ".js", ".txt"])
+                st.download_button(f"📥 BAIXAR", st.session_state['strike_code'], file_name=f"hydra{formato}")
             with tab_v:
                 if "<html>" in st.session_state['strike_code'].lower():
                     st.components.v1.html(st.session_state['strike_code'], height=450, scrolling=True)
