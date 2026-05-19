@@ -1,9 +1,8 @@
 """
 =============================================================================
-🛡️ NEXUS OMNICORE v8.0 - OMNI-PROTOCOL & TIME-SYNC PERFECTED
+🛡️ NEXUS OMNICORE v8.1 - OMNI-PROTOCOL & CACHE HUNTER FIX
 =============================================================================
-Fusão Suprema: Correção absoluta de Timezone, Banco de Dados persistente,
-e motor universal preparado para aceitar módulos futuros (RS232/USB/ETH).
+Fusão Suprema: DNA Histórico Preservado + Recuperação Garantida de Satélite (24h)
 =============================================================================
 """
 
@@ -33,7 +32,7 @@ try:
 except ImportError as e:
     st.error(f"Erro Crítico. Dependência ausente: {e}")
 
-st.set_page_config(page_title="Nexus v8.0 Omni", page_icon="🐉", layout="wide")
+st.set_page_config(page_title="Nexus v8.1 Omni", page_icon="🐉", layout="wide")
 
 # --- BANCO DE DADOS DA HIDRA (MEMÓRIA PERSISTENTE) ---
 def init_db():
@@ -151,7 +150,7 @@ def gerar_pdf(conteudo):
     pdf.multi_cell(0, 6, conteudo.encode('latin-1', 'replace').decode('latin-1'))
     return bytes(pdf.output(dest='S'))
 
-# 📡 TERMINAL HARDWARE (OMNI-PROTOCOL & TIME-SYNC FIX)
+# 📡 TERMINAL HARDWARE (OMNI-PROTOCOL & CACHE HUNTER)
 def formatar_log(tipo, payload, ts):
     if tipo == "RF_SCAN":
         return f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>ALVO RF: Canal {int(payload):02d} Interceptado via Nuvem!</span>"
@@ -167,7 +166,7 @@ def renderizar_painel_rf():
         st.session_state.logs_rf = []
         historico = carregar_do_db()
         if not historico:
-            st.session_state.logs_rf.append(f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] UPLINK OMNI ONLINE: Escutando portas seriais...</span>")
+            st.session_state.logs_rf.append(f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] UPLINK OMNI ONLINE: Escutando portas seriais e RF...</span>")
         else:
             for rec in reversed(historico):
                 st.session_state.ids_processados.add(rec[0])
@@ -184,8 +183,8 @@ def renderizar_painel_rf():
             if st.button("🔄 Sincronizar Radar"):
                 if modo_auto:
                     try:
-                        # FIX DE TIMEZONE: Busca todo o cache recente ignorando o tempo do computador
-                        res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1)", timeout=5)
+                        # CACHE HUNTER: since=24h garante que a Nuvem puxe qualquer dado arremessado no último dia
+                        res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=24h](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=24h)", timeout=5)
                         if res.status_code == 200:
                             linhas = res.text.strip().split('\n')
                             for linha in linhas:
@@ -199,13 +198,15 @@ def renderizar_painel_rf():
                                             st.session_state.ids_processados.add(id_sinal)
                                             ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
                                             
-                                            # Tenta decodificar o novo pacote Universal
                                             try:
                                                 payload_json = json.loads(dados_ntfy.get("message"))
-                                                tipo = payload_json.get("tipo", "GENERIC_SERIAL")
-                                                dado_real = payload_json.get("payload", "")
+                                                if isinstance(payload_json, dict) and "tipo" in payload_json:
+                                                    tipo = payload_json.get("tipo", "GENERIC_SERIAL")
+                                                    dado_real = payload_json.get("payload", "")
+                                                else:
+                                                    tipo = "RF_SCAN"
+                                                    dado_real = dados_ntfy.get("message")
                                             except:
-                                                # Fallback para pacotes antigos do v7.4
                                                 tipo = "RF_SCAN"
                                                 dado_real = dados_ntfy.get("message")
                                             
@@ -230,7 +231,7 @@ def renderizar_painel_rf():
 # 🕹️ CORE PRINCIPAL
 def main():
     h1, h2, h3, h4 = st.columns(4)
-    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>NEXUS OMNI v8.0</div></div>", unsafe_allow_html=True)
+    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>NEXUS OMNI v8.1</div></div>", unsafe_allow_html=True)
     with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>DATA LAKE DB</div><div class='hud-value'>SQLITE ANCORADO</div></div>", unsafe_allow_html=True)
     with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>OMNI-PROTOCOL ACTIVE</div></div>", unsafe_allow_html=True)
     with h4: st.markdown("<div class='hud-card'><div class='hud-title'>COGNITIVO</div><div class='hud-value' style='color:#58a6ff;'>GROQ + GEMINI</div></div>", unsafe_allow_html=True)
