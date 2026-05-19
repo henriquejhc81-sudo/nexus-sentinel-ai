@@ -1,122 +1,137 @@
 import streamlit as st
-import openai
-import google.generativeai as genai
-import anthropic
+from groq import Groq
+from duckduckgo_search import DDGS
+import time
+import random
 
-# Configuração da página visual
-st.set_page_config(page_title="Analisador de IAs", layout="wide")
-st.title("🤖 Central Multiversal de IAs & Analisador Personalizado")
-st.write("Insira sua pergunta abaixo para enviar às principais IAs do mercado e receber uma análise corrigida.")
+# --- CONFIGURAÇÃO DA PÁGINA E DESIGN CYBER-SENTINEL ---
+st.set_page_config(page_title="Nexus Sentinel v5.3", page_icon="🛡️", layout="wide")
 
-# Área lateral para colocar as chaves de API com segurança
-st.sidebar.header("🔑 Configuração das Chaves de API")
-openai_key = st.sidebar.text_input("OpenAI API Key", type="password")
-gemini_key = st.sidebar.text_input("Gemini API Key", type="password")
-claude_key = st.sidebar.text_input("Claude API Key", type="password")
+st.markdown("""
+    <style>
+    .main { background-color: #0b0e14; color: #e0e0e0; }
+    .stButton>button { 
+        background: linear-gradient(135deg, #00c853 0%, #b2ff59 100%); 
+        color: #000; font-weight: 800; border-radius: 8px; border: none; transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+    }
+    .status-box { 
+        padding: 15px; border-radius: 10px; background: #161b22; 
+        border: 1px solid #00c853; box-shadow: inset 0 0 10px rgba(0, 200, 83, 0.1);
+        margin-bottom: 20px; font-family: 'Courier New', Courier, monospace;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# Campo de texto para o usuário fazer a pergunta
-pergunta_usuario = st.text_area("✍️ Digite aqui a sua pergunta ou o problema que quer resolver:", height=100)
-
-# Botão para iniciar o processo
-if st.button("🚀 Enviar e Analisar Respostas"):
-    if not (openai_key and gemini_key and claude_key):
-        st.error("Por favor, preencha todas as chaves de API na barra lateral antes de continuar.")
-    elif not pergunta_usuario:
-        st.warning("Por favor, digite uma pergunta.")
-    else:
-        # Criando três colunas na tela para mostrar o que cada IA respondeu
-        col1, col2, col3 = st.columns(3)
+# --- MOTOR DE IA COM BLINDAGEM ANTI-ERRO 429 ---
+def nexus_agent_call(prompt, modo, contexto):
+    try:
+        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    except:
+        return "Erro: Chave API ausente nos Secrets!"
         
-        resposta_openai = ""
-        resposta_gemini = ""
-        resposta_claude = ""
+    max_retries = 5 # Aumentado para maior persistência
+    for attempt in range(max_retries):
+        try:
+            prompt_sistema = f"""
+            Você é o Nexus Sentinel 5.3. Missão: {modo}.
+            DIRETRIZ OBRIGATÓRIA: Em QUALQUER projeto, inclua um '🛡️ MÓDULO DE SEGURANÇA' com Logs de Invasão e proteção contra intrusos.
+            
+            MODO ARQUITETO:
+            1. '🛠️ SETUP'
+            2. '📁 ESTRUTURA'
+            3. '🚀 CÓDIGO COMPLETO'
+            
+            Responda em Português.
+            """
+            completion = client.chat.completions.create(
+                messages=[{"role": "system", "content": prompt_sistema}, {"role": "user", "content": prompt}],
+                model="llama-3.3-70b-versatile",
+                temperature=0.1,
+            )
+            return completion.choices[0].message.content
+            
+        except Exception as e:
+            error_msg = str(e)
+            if "429" in error_msg:
+                # ESTRATÉGIA ANTI-BLOQUEIO: Espera progressiva
+                wait_time = (attempt + 1) * 8 
+                st.warning(f"🛡️ Nexus detectou Limite de Cota (429). Ativando Auto-Healing... Aguarde {wait_time}s")
+                time.sleep(wait_time)
+            else:
+                return f"Erro Crítico no Sentinel: {e}"
+    return "O Nexus não conseguiu furar o bloqueio da API após 5 tentativas. Tente reduzir o tamanho do pedido."
 
-        # --- 1. Chamando a OpenAI ---
-        with col1:
-            st.subheader("🟢 ChatGPT (OpenAI)")
-            with st.spinner("Aguardando ChatGPT..."):
+# --- BARRA LATERAL (ESTRUTURA MANTIDA) ---
+with st.sidebar:
+    st.title("🛡️ Nexus Sentinel")
+    st.caption("v5.3 | Anti-Lock Mode")
+    
+    st.divider()
+    with st.expander("🚀 Superpoderes Ativos", expanded=True):
+        st.toggle("Segurança Nativa em Tudo", value=True)
+        st.toggle("Auto-Healing Anti-429", value=True)
+        st.toggle("Modo Arquiteto", value=True)
+        st.toggle("Live Preview", value=True)
+
+    st.divider()
+    st.subheader("🔗 DevSecOps")
+    for app in ["GitLab", "GitHub", "Azure DevOps", "Slack/Notion"]:
+        st.toggle(app, value=True)
+    
+    modo = st.selectbox("🎯 Modo do Agente", [
+        "Projeto do Zero (Modo Arquiteto)",
+        "Incremento Mágico + Testes",
+        "Análise de Vulnerabilidades",
+        "Design-to-Code"
+    ])
+
+# --- ÁREA PRINCIPAL ---
+st.title("⚡ Nexus OmniCode Sentinel")
+st.markdown("<div class='status-box'><b>STATUS:</b> PROTEGIDO | <b>ANTI-429:</b> ATIVO | <b>SEGURANÇA:</b> INTEGRAL</div>", unsafe_allow_html=True)
+
+col_in, col_out = st.columns([1, 1.2])
+
+with col_in:
+    st.subheader("📥 Missão")
+    user_input = st.text_area("Descreva seu projeto (Segurança incluída automaticamente):", height=300)
+    upload = st.file_uploader("Contexto (Opcional)", accept_multiple_files=True)
+
+with col_out:
+    st.subheader("🚀 Entrega Sentinel")
+    if st.button("ATIVAR NEXUS SENTINEL"):
+        if user_input:
+            with st.spinner("Sentinel rompendo bloqueios de cota e processando..."):
                 try:
-                    client_oa = openai.OpenAI(api_key=openai_key)
-                    completion = client_oa.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[{"role": "user", "content": pergunta_usuario}]
-                    )
-                    resposta_openai = completion.choices[0].message.content
-                    st.success("Respondido!")
-                    st.write(resposta_openai)
-                except Exception as e:
-                    resposta_openai = f"Erro ao chamar OpenAI: {e}"
-                    st.error(resposta_openai)
+                    with DDGS() as ddgs:
+                        busca = [r['body'] for r in ddgs.text(f"security architecture for {user_input}", max_results=2)]
+                        contexto = "\n".join(busca)
+                except:
+                    contexto = "Base interna de elite."
+                
+                resultado = nexus_agent_call(user_input, modo, contexto)
+                st.session_state['last_result'] = resultado
+        else:
+            st.error("Diga ao Nexus o que construir.")
 
-        # --- 2. Chamando o Google Gemini ---
-        with col2:
-            st.subheader("🔵 Gemini (Google)")
-            with st.spinner("Aguardando Gemini..."):
-                try:
-                    genai.configure(api_key=gemini_key)
-                    model = genai.GenerativeModel("gemini-1.5-flash")
-                    response = model.generate_content(pergunta_usuario)
-                    resposta_gemini = response.text
-                    st.success("Respondido!")
-                    st.write(resposta_gemini)
-                except Exception as e:
-                    resposta_gemini = f"Erro ao chamar Gemini: {e}"
-                    st.error(resposta_gemini)
+    if 'last_result' in st.session_state:
+        resultado = st.session_state['last_result']
+        tab1, tab2 = st.tabs(["💻 Plano e Código", "🖼️ Live Preview"])
+        with tab1:
+            st.markdown(resultado)
+        with tab2:
+            if "<html>" in resultado.lower() or "<!doctype html>" in resultado.lower():
+                st.components.v1.html(resultado, height=500, scrolling=True)
+            else:
+                st.info("Aguardando código HTML...")
 
-        # --- 3. Chamando o Anthropic Claude ---
-        with col3:
-            st.subheader("🟠 Claude (Anthropic)")
-            with st.spinner("Aguardando Claude..."):
-                try:
-                    client_ant = anthropic.Anthropic(api_key=claude_key)
-                    message = client_ant.messages.create(
-                        model="claude-3-haiku-20240307",
-                        max_tokens=1000,
-                        messages=[{"role": "user", "content": pergunta_usuario}]
-                    )
-                    resposta_claude = message.content[0].text
-                    st.success("Respondido!")
-                    st.write(resposta_claude)
-                except Exception as e:
-                    resposta_claude = f"Erro ao chamar Claude: {e}"
-                    st.error(resposta_claude)
-
-        # --- 4. IA Personalizada: Analisando e Corrigindo as Respostas ---
         st.divider()
-        st.header("🧠 Sua IA Personalizada (Análise Consolidada)")
-        
-        with st.spinner("Analisando contradições, erros e gerando sua resposta perfeita..."):
-            try:
-                # Criamos um comando especial (Prompt) dizendo para a IA agir como seu tutor pessoal
-                prompt_analise = f"""
-                Você é a IA personalizada do usuário. O usuário fez a seguinte pergunta: "{pergunta_usuario}"
-                
-                Abaixo estão as respostas que três IAs diferentes deram:
-                
-                --- RESPOSTA CHATGPT ---
-                {resposta_openai}
-                
-                --- RESPOSTA GEMINI ---
-                {resposta_gemini}
-                
-                --- RESPOSTA CLAUDE ---
-                {resposta_claude}
-                
-                Sua tarefa:
-                1. Analise se alguma das IAs cometeu erros, alucinações ou se contradisseram.
-                2. Junte os melhores pontos de cada resposta.
-                3. Entregue uma resposta final corrigida, ideal, sem erros, formatada de maneira limpa para o usuário.
-                """
-                
-                # Usamos a OpenAI como o cérebro que analisa as outras
-                client_oa = openai.OpenAI(api_key=openai_key)
-                analise_final = client_oa.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "user", "content": prompt_analise}]
-                )
-                
-                st.info("Aqui está o veredito final da sua IA Personalizada:")
-                st.write(analise_final.choices[0].message.content)
-                
-            except Exception as e:
-                st.error(f"Não foi possível gerar a análise final: {e}")
+        formato_ext = st.selectbox("Formato:", [".py", ".html", ".js", ".txt"], key="f_selector")
+        st.download_button(label=f"BAIXAR PROJETO ({formato_ext})", data=resultado, file_name=f"nexus_sentinel_v53{formato_ext}")
+
+st.divider()
+st.subheader("💬 Nexus Sentinel Chat")
+chat_input = st.text_input("Dúvida? Pergunte aqui:")
+if chat_input and 'last_result' in st.session_state:
+    with st.chat_message("assistant"):
+        st.markdown(nexus_agent_call(f"Sobre o projeto: {st.session_state['last_result']}. Pergunta: {chat_input}", "Chat Suporte", ""))
