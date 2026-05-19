@@ -1,9 +1,9 @@
 """
 =============================================================================
-🛡️ NEXUS OMNICORE v7.4 - HYDRA CORE (NTFY MILITARY UPLINK)
+🛡️ NEXUS OMNICORE v7.5 - HYDRA CORE (DATA LAKE & PERFECT SYNC)
 =============================================================================
-Fusão Suprema: DNA Histórico Preservado + Protocolo NTFY de Alta Disponibilidade
-O sistema escuta satélites sem abrir abas e com resistência anti-bloqueio.
+Fusão Suprema: DNA Histórico Preservado + Banco de Dados SQLite + Sincronia NTFY
+A nuvem agora tem memória permanente e puxa o histórico dos satélites.
 =============================================================================
 """
 
@@ -13,6 +13,7 @@ import re
 import time
 import requests
 import json
+import sqlite3
 import concurrent.futures
 import pandas as pd
 from PIL import Image
@@ -32,7 +33,33 @@ try:
 except ImportError as e:
     st.error(f"Erro Crítico. Dependência ausente: {e}")
 
-st.set_page_config(page_title="Nexus v7.4 Hydra", page_icon="🐉", layout="wide")
+st.set_page_config(page_title="Nexus v7.5 Hydra", page_icon="🐉", layout="wide")
+
+# --- BANCO DE DADOS DA HIDRA (MEMÓRIA PERSISTENTE) ---
+def init_db():
+    conn = sqlite3.connect('nexus_datalake.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS radar_logs 
+                 (id_sinal TEXT PRIMARY KEY, canal TEXT, timestamp TEXT)''')
+    conn.commit()
+    conn.close()
+
+def salvar_no_db(id_sinal, canal, timestamp):
+    conn = sqlite3.connect('nexus_datalake.db')
+    c = conn.cursor()
+    c.execute("INSERT OR IGNORE INTO radar_logs (id_sinal, canal, timestamp) VALUES (?, ?, ?)", (id_sinal, canal, timestamp))
+    conn.commit()
+    conn.close()
+
+def carregar_do_db():
+    conn = sqlite3.connect('nexus_datalake.db')
+    c = conn.cursor()
+    c.execute("SELECT id_sinal, canal, timestamp FROM radar_logs ORDER BY timestamp DESC LIMIT 50")
+    linhas = c.fetchall()
+    conn.close()
+    return linhas
+
+init_db()
 
 # 🖥️ DESIGN SOBERANO (HUD Balanceado)
 st.markdown("""
@@ -153,14 +180,22 @@ def gerar_pdf(conteudo):
     pdf.multi_cell(0, 6, conteudo.encode('latin-1', 'replace').decode('latin-1'))
     return bytes(pdf.output(dest='S'))
 
-# 📡 TERMINAL HARDWARE (PROTOCOLO NTFY MILITAR)
+# 📡 TERMINAL HARDWARE (DATA LAKE & NTFY SYNC)
 def renderizar_painel_rf():
     st.markdown("<div style='margin-top:4px;'></div>", unsafe_allow_html=True)
     
+    if "ids_processados" not in st.session_state:
+        st.session_state.ids_processados = set()
     if "logs_rf" not in st.session_state:
-        st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] UPLINK NTFY ONLINE: Aguardando telemetria...</span>"]
-    if "ultimo_id_sinal" not in st.session_state:
-        st.session_state.ultimo_id_sinal = ""
+        st.session_state.logs_rf = []
+        # Carrega o histórico do Banco de Dados ao iniciar
+        historico = carregar_do_db()
+        if not historico:
+            st.session_state.logs_rf.append(f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] UPLINK NTFY ONLINE: Aguardando telemetria...</span>")
+        else:
+            for rec in reversed(historico):
+                st.session_state.ids_processados.add(rec[0])
+                st.session_state.logs_rf.append(f"[{rec[2]}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA VERIFICADA: Canal {int(rec[1]):02d} Interceptado via Nuvem!</span>")
 
     c1, c2 = st.columns([2.6, 1.4])
     with c2:
@@ -168,39 +203,42 @@ def renderizar_painel_rf():
         hw = "ESP32 + NRF24L01 HYDRA" if modo_auto else "NENHUM COMPONENTE DETECTADO"
         st_porta = "COM3 ATIVA (UPLINK SECURE)" if modo_auto else "OFFLINE"
         
-        # O Nexus puxa os dados limpos do protocolo NTFY
-        if modo_auto:
-            try:
-                # Faz um pooling rápido pegando a última mensagem (desde 5 minutos atrás)
-                res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=5m](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=5m)", timeout=3)
-                if res.status_code == 200:
-                    linhas = res.text.strip().split('\n')
-                    if linhas and linhas[-1]:
-                        ultimo_sinal = json.loads(linhas[-1])
-                        
-                        # Verifica se é uma mensagem real enviada pelo seu Python
-                        if ultimo_sinal.get("event") == "message":
-                            canal = ultimo_sinal.get("message")
-                            id_sinal = ultimo_sinal.get("id")
-                            
-                            if id_sinal != st.session_state.ultimo_id_sinal:
-                                st.session_state.ultimo_id_sinal = id_sinal
-                                ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-                                log_real = f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA VERIFICADA: Canal {int(canal):02d} Interceptado via Nuvem!</span>"
-                                st.session_state.logs_rf.append(log_real)
-            except: pass
-                
-        st.markdown(f"<div class='hud-card'><div class='hud-title'>COMPONENTE</div><div class='hud-value' style='color:#58a6ff;'>{hw}</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='hud-card'><div class='hud-title'>STATUS DA PONTE</div><div class='hud-value' style='color:#56d364;'>{st_porta}</div></div>", unsafe_allow_html=True)
-        
         c_btn1, c_btn2 = st.columns(2)
         with c_btn1:
             if st.button("🔄 Sincronizar Radar"):
-                st.rerun() # O gatilho para você puxar os dados na hora da apresentação
+                if modo_auto:
+                    try:
+                        # Agora ele puxa todas as mensagens dos últimos 10 minutos! Sem erro de timing.
+                        res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=10m](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=10m)", timeout=4)
+                        if res.status_code == 200:
+                            linhas = res.text.strip().split('\n')
+                            for linha in linhas:
+                                if not linha: continue
+                                try:
+                                    dados = json.loads(linha)
+                                    if dados.get("event") == "message":
+                                        canal = dados.get("message")
+                                        id_sinal = dados.get("id")
+                                        
+                                        if id_sinal not in st.session_state.ids_processados:
+                                            st.session_state.ids_processados.add(id_sinal)
+                                            ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+                                            # Salva na tela e no banco de dados eterno!
+                                            salvar_no_db(id_sinal, canal, ts)
+                                            log_real = f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA VERIFICADA: Canal {int(canal):02d} Interceptado via Nuvem!</span>"
+                                            st.session_state.logs_rf.append(log_real)
+                                except: pass
+                    except: pass
+                st.rerun() 
+                
         with c_btn2:
             if st.button("🧹 Limpar Console"): 
-                st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] Memória tática apagada.</span>"]
+                # Limpa a tela (mas o BD continua seguro)
+                st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] Memória visual apagada (DB Seguro).</span>"]
                 st.rerun()
+
+        st.markdown(f"<div class='hud-card'><div class='hud-title'>COMPONENTE</div><div class='hud-value' style='color:#58a6ff;'>{hw}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='hud-card'><div class='hud-title'>STATUS DA PONTE</div><div class='hud-value' style='color:#56d364;'>{st_porta}</div></div>", unsafe_allow_html=True)
 
     with c1:
         html = "<div class='terminal-box'>" + "".join([f"<div class='terminal-line'>{l}</div>" for l in reversed(st.session_state.logs_rf)]) + "</div>"
@@ -209,8 +247,8 @@ def renderizar_painel_rf():
 # 🕹️ CORE PRINCIPAL
 def main():
     h1, h2, h3, h4 = st.columns(4)
-    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>HYDRA CORE v7.4</div></div>", unsafe_allow_html=True)
-    with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>BLINDAGEM</div><div class='hud-value'>MULTI-IA SELF-HEALING</div></div>", unsafe_allow_html=True)
+    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>HYDRA CORE v7.5</div></div>", unsafe_allow_html=True)
+    with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>DATA LAKE DB</div><div class='hud-value'>SQLITE ANCORADO</div></div>", unsafe_allow_html=True)
     with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>UPLINK IOT ACTIVE</div></div>", unsafe_allow_html=True)
     with h4: st.markdown("<div class='hud-card'><div class='hud-title'>COGNITIVO</div><div class='hud-value' style='color:#58a6ff;'>GROQ + GEMINI</div></div>", unsafe_allow_html=True)
 
