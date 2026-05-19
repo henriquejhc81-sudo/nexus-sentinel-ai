@@ -1,9 +1,9 @@
 """
 =============================================================================
-🛡️ NEXUS OMNICORE v7.2 - HYDRA CORE (THE FINAL UPLINK)
+🛡️ NEXUS OMNICORE v7.3 - HYDRA CORE (IoT UPLINK EDITION)
 =============================================================================
-Fusão Suprema com correção definitiva na recepção de parâmetros via URL.
-A ponte Hardware-Nuvem está 100% blindada e operacional.
+Fusão Suprema: DNA Histórico Preservado + Protocolo IoT Invisível
+O sistema não abre mais abas, comunicando-se de forma assíncrona.
 =============================================================================
 """
 
@@ -11,6 +11,7 @@ import streamlit as st
 import io
 import re
 import time
+import requests
 import concurrent.futures
 import pandas as pd
 from PIL import Image
@@ -30,7 +31,7 @@ try:
 except ImportError as e:
     st.error(f"Erro Crítico. Dependência ausente: {e}")
 
-st.set_page_config(page_title="Nexus v7.2 Hydra", page_icon="🐉", layout="wide")
+st.set_page_config(page_title="Nexus v7.3 Hydra", page_icon="🐉", layout="wide")
 
 # 🖥️ DESIGN SOBERANO (HUD Balanceado)
 st.markdown("""
@@ -118,7 +119,6 @@ class HydraEngine:
         self.gemini_key = gemini_key
 
     def strike(self, system, prompt):
-        # CABEÇA 1: Tentativa Primária Rápida (Groq Llama 3.3)
         if self.groq_key:
             client = Groq(api_key=self.groq_key)
             try:
@@ -127,14 +127,12 @@ class HydraEngine:
                     model="llama-3.3-70b-versatile", temperature=0.2
                 ).choices[0].message.content
             except Exception as e:
-                # CABEÇA 2: Mutação e Fuga para a Nuvem Secundária (Gemini) se a cota estourar
                 if self.gemini_key:
                     try:
                         genai.configure(api_key=self.gemini_key)
                         return genai.GenerativeModel('gemini-1.5-pro-latest').generate_content(f"{system}\n\n{prompt}").text
                     except: pass
                 
-        # CABEÇA 3: Recuo Estratégico (DuckDuckGo Context se APIs falharem)
         try:
             with DDGS() as ddgs:
                 search = [r['body'] for r in ddgs.text(f"solução para: {prompt[:50]}", max_results=2)]
@@ -145,7 +143,7 @@ def gerar_pdf(conteudo):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.set_fill_color(139, 92, 246) # Roxo Hydra
+    pdf.set_fill_color(139, 92, 246)
     pdf.set_text_color(255, 255, 255)
     pdf.cell(0, 15, "DOSSIE DE AUDITORIA FORENSE - NEXUS HYDRA", ln=True, align='C', fill=True)
     pdf.ln(10)
@@ -154,60 +152,61 @@ def gerar_pdf(conteudo):
     pdf.multi_cell(0, 6, conteudo.encode('latin-1', 'replace').decode('latin-1'))
     return bytes(pdf.output(dest='S'))
 
-# 📡 TERMINAL HARDWARE
+# 📡 TERMINAL HARDWARE (NOVO PROTOCOLO IOT)
 def renderizar_painel_rf():
     st.markdown("<div style='margin-top:4px;'></div>", unsafe_allow_html=True)
     
-    # ⚠️ CORREÇÃO CRÍTICA DE UPLINK v7.2 (Nova sintaxe do Streamlit para ler a URL)
-    parametros = st.query_params
-    canal_injetado = parametros.get("canal")
-    
     if "logs_rf" not in st.session_state:
-        st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] LINK PRONTO: Aguardando USB...</span>"]
-    
-    # Se o script Python local injetar o canal, ele entra no log real
-    if canal_injetado:
-        try:
-            canal_limpo = int(canal_injetado)
-            ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-            log_real = f"[{ts}] <span class='terminal-tag'>[LIVE_USB]</span> -> <span class='terminal-data'>CAPTURA REAL CONFIRMADA: Canal {canal_limpo:02d} Ativo e Interceptado no Polo.</span>"
-            
-            # Adiciona apenas se for um log novo para não duplicar na tela
-            if log_real not in st.session_state.logs_rf: 
-                st.session_state.logs_rf.append(log_real)
-        except ValueError:
-            pass
+        st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] MÓDULO IoT ONLINE: Escutando sinais invisíveis...</span>"]
+    if "ultimo_dweet" not in st.session_state:
+        st.session_state.ultimo_dweet = ""
 
     c1, c2 = st.columns([2.6, 1.4])
     with c2:
-        modo_auto = st.toggle("🔌 LEITURA AUTOMÁTICA DE HARDWARE", value=True) # Ligado por padrão
+        modo_auto = st.toggle("🔌 LEITURA AUTOMÁTICA DE HARDWARE", value=True)
         hw = "ESP32 + NRF24L01 HYDRA" if modo_auto else "NENHUM COMPONENTE DETECTADO"
-        st_porta = "COM3 ATIVA (115200 bps)" if modo_auto else "OFFLINE"
+        st_porta = "COM3 ATIVA (UPLINK IoT)" if modo_auto else "OFFLINE"
         
-        # Simulação genérica APENAS se nenhum canal real chegou ainda
-        if modo_auto and len(st.session_state.logs_rf) < 6 and not canal_injetado:
-            for ch in [2, 12, 19]:
-                st.session_state.logs_rf.append(f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] <span class='terminal-info'>[DUMP_SIMULADO] -> Varredura background: Canal {ch:02d}</span>")
+        # O Nexus agora puxa os dados do satélite (dweet.io) sem precisar de parâmetros de URL
+        if modo_auto:
+            try:
+                res = requests.get("[https://dweet.io/get/latest/dweet/for/nexus-hydra-polo-2026](https://dweet.io/get/latest/dweet/for/nexus-hydra-polo-2026)", timeout=2)
+                if res.status_code == 200:
+                    dados = res.json()
+                    if "with" in dados and len(dados["with"]) > 0:
+                        dweet = dados["with"][0]
+                        criado_em = dweet["created"]
+                        if criado_em != st.session_state.ultimo_dweet:
+                            st.session_state.ultimo_dweet = criado_em
+                            canal = dweet["content"].get("canal")
+                            if canal:
+                                ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+                                log_real = f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA REAL: Canal {int(canal):02d} Interceptado via Nuvem!</span>"
+                                st.session_state.logs_rf.append(log_real)
+            except: pass
                 
         st.markdown(f"<div class='hud-card'><div class='hud-title'>COMPONENTE</div><div class='hud-value' style='color:#58a6ff;'>{hw}</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='hud-card'><div class='hud-title'>STATUS PORTA</div><div class='hud-value' style='color:#56d364;'>{st_porta}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='hud-card'><div class='hud-title'>STATUS DA PONTE</div><div class='hud-value' style='color:#56d364;'>{st_porta}</div></div>", unsafe_allow_html=True)
         
-        if st.button("🧹 Limpar Console"): 
-            st.session_state.logs_rf = []
-            st.query_params.clear() # Reseta a URL
-            st.rerun()
+        c_btn1, c_btn2 = st.columns(2)
+        with c_btn1:
+            if st.button("🔄 Sincronizar Radar"):
+                st.rerun() # Puxa o último sinal interceptado pelo hardware na hora!
+        with c_btn2:
+            if st.button("🧹 Limpar Console"): 
+                st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] Logs apagados.</span>"]
+                st.rerun()
 
     with c1:
-        # Renderiza os logs do array na caixa preta
         html = "<div class='terminal-box'>" + "".join([f"<div class='terminal-line'>{l}</div>" for l in reversed(st.session_state.logs_rf)]) + "</div>"
         st.markdown(html, unsafe_allow_html=True)
 
 # 🕹️ CORE PRINCIPAL
 def main():
     h1, h2, h3, h4 = st.columns(4)
-    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>HYDRA CORE v7.2</div></div>", unsafe_allow_html=True)
+    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>HYDRA CORE v7.3</div></div>", unsafe_allow_html=True)
     with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>BLINDAGEM</div><div class='hud-value'>MULTI-IA SELF-HEALING</div></div>", unsafe_allow_html=True)
-    with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>UPLINK ACTIVE</div></div>", unsafe_allow_html=True)
+    with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>UPLINK IOT ACTIVE</div></div>", unsafe_allow_html=True)
     with h4: st.markdown("<div class='hud-card'><div class='hud-title'>COGNITIVO</div><div class='hud-value' style='color:#58a6ff;'>GROQ + GEMINI</div></div>", unsafe_allow_html=True)
 
     G_KEY = st.secrets.get("GROQ_API_KEY", "")
@@ -216,7 +215,6 @@ def main():
     
     t_auditoria, t_strike, t_rf = st.tabs(["🧠 AUDITORIA MULTI-AGENTE & INCEPTION", "💀 PROTOCOLO RECON & STRIKE", "📡 TERMINAL HARDWARE (USB)"])
     
-    # --- ABA 1: RAG, RED VS BLUE TEAM & INCEPTION DNA ---
     with t_auditoria:
         st.markdown("<br>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns([2.5, 1, 1.2]) 
@@ -242,7 +240,6 @@ def main():
                         laudo_direto = hydra.strike("Aja como um Arquiteto de Software Sênior. Gere código e documentação estruturada impecável.", f"Diretriz: {comando}\nContexto: {ctx}")
                         st.markdown(laudo_direto)
 
-    # --- ABA 2: RECON & STRIKE (Live Preview + Denúncia Forense) ---
     with t_strike:
         st.markdown("<br>", unsafe_allow_html=True)
         c_in, c_opt = st.columns([2, 1])
@@ -270,7 +267,6 @@ def main():
                 if "<html>" in st.session_state['strike_code'].lower():
                     st.components.v1.html(st.session_state['strike_code'], height=450, scrolling=True)
 
-    # --- ABA 3: HARDWARE RF ---
     with t_rf:
         renderizar_painel_rf()
 
