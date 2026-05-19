@@ -1,8 +1,8 @@
 """
 =============================================================================
-🛡️ NEXUS OMNICORE v8.1 - OMNI-PROTOCOL & CACHE HUNTER FIX
+🛡️ NEXUS OMNICORE v8.2 - OMNI-PROTOCOL & DATA LAKE EVOLUTION
 =============================================================================
-Fusão Suprema: DNA Histórico Preservado + Recuperação Garantida de Satélite (24h)
+Fusão Suprema: Correção do SQLite Schema, Timezone Fix e DNA Intacto.
 =============================================================================
 """
 
@@ -32,11 +32,13 @@ try:
 except ImportError as e:
     st.error(f"Erro Crítico. Dependência ausente: {e}")
 
-st.set_page_config(page_title="Nexus v8.1 Omni", page_icon="🐉", layout="wide")
+st.set_page_config(page_title="Nexus v8.2 Omni", page_icon="🐉", layout="wide")
 
-# --- BANCO DE DADOS DA HIDRA (MEMÓRIA PERSISTENTE) ---
+# --- BANCO DE DADOS DA HIDRA (NOVA VERSÃO BLINDADA) ---
+DB_NAME = 'nexus_datalake_v8.db' # Força a criação de um DB limpo com o schema correto
+
 def init_db():
-    conn = sqlite3.connect('nexus_datalake.db')
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS radar_logs 
                  (id_sinal TEXT PRIMARY KEY, tipo TEXT, payload TEXT, timestamp TEXT)''')
@@ -44,14 +46,14 @@ def init_db():
     conn.close()
 
 def salvar_no_db(id_sinal, tipo, payload, timestamp):
-    conn = sqlite3.connect('nexus_datalake.db')
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("INSERT OR IGNORE INTO radar_logs (id_sinal, tipo, payload, timestamp) VALUES (?, ?, ?, ?)", (id_sinal, tipo, str(payload), timestamp))
     conn.commit()
     conn.close()
 
 def carregar_do_db():
-    conn = sqlite3.connect('nexus_datalake.db')
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT id_sinal, tipo, payload, timestamp FROM radar_logs ORDER BY timestamp DESC LIMIT 50")
     linhas = c.fetchall()
@@ -150,10 +152,14 @@ def gerar_pdf(conteudo):
     pdf.multi_cell(0, 6, conteudo.encode('latin-1', 'replace').decode('latin-1'))
     return bytes(pdf.output(dest='S'))
 
-# 📡 TERMINAL HARDWARE (OMNI-PROTOCOL & CACHE HUNTER)
+# 📡 TERMINAL HARDWARE (OMNI-PROTOCOL)
 def formatar_log(tipo, payload, ts):
     if tipo == "RF_SCAN":
-        return f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>ALVO RF: Canal {int(payload):02d} Interceptado via Nuvem!</span>"
+        try:
+            # Tenta formatar bonito se for o radar
+            return f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>ALVO RF: Canal {int(payload):02d} Interceptado via Nuvem!</span>"
+        except:
+            return f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>ALVO RF: {payload}</span>"
     else:
         return f"[{ts}] <span class='terminal-tag' style='color:#facc15;'>[OMNI_SERIAL]</span> -> <span class='terminal-info'>DADO BRUTO: {payload}</span>"
 
@@ -183,7 +189,6 @@ def renderizar_painel_rf():
             if st.button("🔄 Sincronizar Radar"):
                 if modo_auto:
                     try:
-                        # CACHE HUNTER: since=24h garante que a Nuvem puxe qualquer dado arremessado no último dia
                         res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=24h](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=24h)", timeout=5)
                         if res.status_code == 200:
                             linhas = res.text.strip().split('\n')
@@ -231,8 +236,8 @@ def renderizar_painel_rf():
 # 🕹️ CORE PRINCIPAL
 def main():
     h1, h2, h3, h4 = st.columns(4)
-    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>NEXUS OMNI v8.1</div></div>", unsafe_allow_html=True)
-    with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>DATA LAKE DB</div><div class='hud-value'>SQLITE ANCORADO</div></div>", unsafe_allow_html=True)
+    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>NEXUS OMNI v8.2</div></div>", unsafe_allow_html=True)
+    with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>DATA LAKE DB</div><div class='hud-value'>SQLITE V8 ANCORADO</div></div>", unsafe_allow_html=True)
     with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>OMNI-PROTOCOL ACTIVE</div></div>", unsafe_allow_html=True)
     with h4: st.markdown("<div class='hud-card'><div class='hud-title'>COGNITIVO</div><div class='hud-value' style='color:#58a6ff;'>GROQ + GEMINI</div></div>", unsafe_allow_html=True)
 
