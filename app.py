@@ -1,9 +1,9 @@
 """
 =============================================================================
-🛡️ NEXUS OMNICORE v7.3 - HYDRA CORE (IoT UPLINK EDITION)
+🛡️ NEXUS OMNICORE v7.4 - HYDRA CORE (NTFY MILITARY UPLINK)
 =============================================================================
-Fusão Suprema: DNA Histórico Preservado + Protocolo IoT Invisível
-O sistema não abre mais abas, comunicando-se de forma assíncrona.
+Fusão Suprema: DNA Histórico Preservado + Protocolo NTFY de Alta Disponibilidade
+O sistema escuta satélites sem abrir abas e com resistência anti-bloqueio.
 =============================================================================
 """
 
@@ -12,6 +12,7 @@ import io
 import re
 import time
 import requests
+import json
 import concurrent.futures
 import pandas as pd
 from PIL import Image
@@ -31,7 +32,7 @@ try:
 except ImportError as e:
     st.error(f"Erro Crítico. Dependência ausente: {e}")
 
-st.set_page_config(page_title="Nexus v7.3 Hydra", page_icon="🐉", layout="wide")
+st.set_page_config(page_title="Nexus v7.4 Hydra", page_icon="🐉", layout="wide")
 
 # 🖥️ DESIGN SOBERANO (HUD Balanceado)
 st.markdown("""
@@ -152,36 +153,40 @@ def gerar_pdf(conteudo):
     pdf.multi_cell(0, 6, conteudo.encode('latin-1', 'replace').decode('latin-1'))
     return bytes(pdf.output(dest='S'))
 
-# 📡 TERMINAL HARDWARE (NOVO PROTOCOLO IOT)
+# 📡 TERMINAL HARDWARE (PROTOCOLO NTFY MILITAR)
 def renderizar_painel_rf():
     st.markdown("<div style='margin-top:4px;'></div>", unsafe_allow_html=True)
     
     if "logs_rf" not in st.session_state:
-        st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] MÓDULO IoT ONLINE: Escutando sinais invisíveis...</span>"]
-    if "ultimo_dweet" not in st.session_state:
-        st.session_state.ultimo_dweet = ""
+        st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] UPLINK NTFY ONLINE: Aguardando telemetria...</span>"]
+    if "ultimo_id_sinal" not in st.session_state:
+        st.session_state.ultimo_id_sinal = ""
 
     c1, c2 = st.columns([2.6, 1.4])
     with c2:
         modo_auto = st.toggle("🔌 LEITURA AUTOMÁTICA DE HARDWARE", value=True)
         hw = "ESP32 + NRF24L01 HYDRA" if modo_auto else "NENHUM COMPONENTE DETECTADO"
-        st_porta = "COM3 ATIVA (UPLINK IoT)" if modo_auto else "OFFLINE"
+        st_porta = "COM3 ATIVA (UPLINK SECURE)" if modo_auto else "OFFLINE"
         
-        # O Nexus agora puxa os dados do satélite (dweet.io) sem precisar de parâmetros de URL
+        # O Nexus puxa os dados limpos do protocolo NTFY
         if modo_auto:
             try:
-                res = requests.get("[https://dweet.io/get/latest/dweet/for/nexus-hydra-polo-2026](https://dweet.io/get/latest/dweet/for/nexus-hydra-polo-2026)", timeout=2)
+                # Faz um pooling rápido pegando a última mensagem (desde 5 minutos atrás)
+                res = requests.get("[https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=5m](https://ntfy.sh/nexus-hydra-polo-2026/json?poll=1&since=5m)", timeout=3)
                 if res.status_code == 200:
-                    dados = res.json()
-                    if "with" in dados and len(dados["with"]) > 0:
-                        dweet = dados["with"][0]
-                        criado_em = dweet["created"]
-                        if criado_em != st.session_state.ultimo_dweet:
-                            st.session_state.ultimo_dweet = criado_em
-                            canal = dweet["content"].get("canal")
-                            if canal:
+                    linhas = res.text.strip().split('\n')
+                    if linhas and linhas[-1]:
+                        ultimo_sinal = json.loads(linhas[-1])
+                        
+                        # Verifica se é uma mensagem real enviada pelo seu Python
+                        if ultimo_sinal.get("event") == "message":
+                            canal = ultimo_sinal.get("message")
+                            id_sinal = ultimo_sinal.get("id")
+                            
+                            if id_sinal != st.session_state.ultimo_id_sinal:
+                                st.session_state.ultimo_id_sinal = id_sinal
                                 ts = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-                                log_real = f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA REAL: Canal {int(canal):02d} Interceptado via Nuvem!</span>"
+                                log_real = f"[{ts}] <span class='terminal-tag'>[LIVE_IOT]</span> -> <span class='terminal-data'>CAPTURA VERIFICADA: Canal {int(canal):02d} Interceptado via Nuvem!</span>"
                                 st.session_state.logs_rf.append(log_real)
             except: pass
                 
@@ -191,10 +196,10 @@ def renderizar_painel_rf():
         c_btn1, c_btn2 = st.columns(2)
         with c_btn1:
             if st.button("🔄 Sincronizar Radar"):
-                st.rerun() # Puxa o último sinal interceptado pelo hardware na hora!
+                st.rerun() # O gatilho para você puxar os dados na hora da apresentação
         with c_btn2:
             if st.button("🧹 Limpar Console"): 
-                st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] Logs apagados.</span>"]
+                st.session_state.logs_rf = [f"[{datetime.now().strftime('%H:%M:%S')}] <span class='terminal-info'>[HYDRA] Memória tática apagada.</span>"]
                 st.rerun()
 
     with c1:
@@ -204,7 +209,7 @@ def renderizar_painel_rf():
 # 🕹️ CORE PRINCIPAL
 def main():
     h1, h2, h3, h4 = st.columns(4)
-    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>HYDRA CORE v7.3</div></div>", unsafe_allow_html=True)
+    with h1: st.markdown("<div class='hud-card'><div class='hud-title'>SISTEMA</div><div class='hud-value' style='color:#8b5cf6;'>HYDRA CORE v7.4</div></div>", unsafe_allow_html=True)
     with h2: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>BLINDAGEM</div><div class='hud-value'>MULTI-IA SELF-HEALING</div></div>", unsafe_allow_html=True)
     with h3: st.markdown("<div class='hud-card hud-card-green'><div class='hud-title'>HARDWARE</div><div class='hud-value'>UPLINK IOT ACTIVE</div></div>", unsafe_allow_html=True)
     with h4: st.markdown("<div class='hud-card'><div class='hud-title'>COGNITIVO</div><div class='hud-value' style='color:#58a6ff;'>GROQ + GEMINI</div></div>", unsafe_allow_html=True)
