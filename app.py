@@ -46,18 +46,29 @@ with tab2:
     st.subheader("Orquestrador Multi-Agente (Hidra de Lerna)")
     comando_global = st.text_input("Defina o objetivo estratégico para as 7 IAs:")
     
-    if st.button("⚡ INICIAR CONSENSO GLOBAL"):
+   if st.button("⚡ INICIAR CONSENSO GLOBAL"):
         if comando_global:
             with st.spinner("Despertando as 7 cabeças..."):
                 try:
-                    # Aqui chamamos a Hidra
-                    resultado = hidra.orquestrar(comando_global, "Contexto: Segurança e Engenharia v8.4")
-                    st.markdown(resultado)
+                    # Executa a Hidra
+                    resultado_bruto = hidra.orquestrar(comando_global, "Contexto: Segurança e Engenharia v8.4")
+                    
+                    # Processamento visual para separar as cabeças
+                    st.success("Consenso Global alcançado!")
+                    
+                    # Split básico para separar os blocos das IAs
+                    blocos = resultado_bruto.split("---")
+                    
+                    for bloco in blocos:
+                        if bloco.strip():
+                            # Cada cabeça vira um Expander para não poluir a tela
+                            with st.expander(f"IA Especialista: {bloco.split('###')[1].splitlines()[0] if '###' in bloco else 'Perspectiva'}"):
+                                st.markdown(bloco)
+                                
                 except Exception as e:
                     st.error(f"Falha neural: {e}")
         else:
-            st.warning("Comando vazio.")
-
+            st.warning("Defina a missão para a Hidra.")
 with tab3:
     st.subheader("Logs de Telemetria")
     # Aqui vai o seu código de telemetria antigo (Data Lake v8)
