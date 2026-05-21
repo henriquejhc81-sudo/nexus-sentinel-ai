@@ -1,83 +1,41 @@
-# --- ENGINE.PY: MOTOR NEURAL GENESIS v12.0 OMEGA ---
-import cv2
-import numpy as np
-from PIL import Image
-import datetime
+"""
+BLOCO 1: ENGINE NEURAL E ORQUESTRAÇÃO
+Este módulo contém a lógica dos 7 especialistas e a gestão de dados.
+"""
+import streamlit as st
+import sqlite3, concurrent.futures
+from groq import Groq
+import google.generativeai as genai
 
-def extrair_qualidade_maxima(img_pil):
-    """Filtro de nitidez e normalização Sentinel."""
-    img_array = np.array(img_pil.convert('RGB'))
-    kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-    img_sharp = cv2.filter2D(img_array, -1, kernel)
-    img_yuv = cv2.cvtColor(img_sharp, cv2.COLOR_RGB2YUV)
-    img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
-    return Image.fromarray(cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB))
+class NexusOrchestrator:
+    def __init__(self, groq_key, gemini_key):
+        self.groq_key = groq_key
+        self.gemini_key = gemini_key
 
-def aplicar_zoom_inteligente(img_pil, zoom_factor=1.8):
-    """Centralização geométrica da íris/lesão."""
-    img_array = np.array(img_pil.convert('RGB'))
-    h, w = img_array.shape[:2]
-    y_c, x_c = h // 2, w // 2
-    h_n, w_n = int(h / zoom_factor), int(w / zoom_factor)
-    y1, y2 = max(0, y_c - h_n // 2), min(h, y_c + h_n // 2)
-    x1, x2 = max(0, x_c - w_n // 2), min(w, x_c + w_n // 2)
-    return Image.fromarray(cv2.resize(img_array[y1:y2, x1:x2], (w, h), interpolation=cv2.INTER_LANCZOS4))
+    def _chamar_especialista(self, perfil, system_prompt, user_prompt, contexto):
+        try:
+            client = Groq(api_key=self.groq_key)
+            completion = client.chat.completions.create(
+                messages=[{"role": "system", "content": system_prompt}, 
+                          {"role": "user", "content": f"MISSÃO: {user_prompt}\nCONTEXTO: {contexto}"}],
+                model="llama-3.3-70b-versatile", temperature=0.1
+            )
+            return completion.choices[0].message.content
+        except Exception as e: return f"Erro no especialista {perfil}: {e}"
 
-def motor_diagnostico_genesis(img_pil, modulo):
-    """Análise multiespectral de densidade e estresse."""
-    img_array = np.array(img_pil.convert('RGB'))
-    img_gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
-    clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
-    img_enhanced = clahe.apply(img_gray)
-    return {"densidade": round(np.mean(img_gray), 2), "estresse": np.random.randint(5, 20), "viz": img_enhanced}
-
-def gerar_mega_laudo_v12(modulo, res, anamnese, nome):
-    """Mega Relatório de 7 Eixos (Iridologia e Geral)."""
-    return {
-        "titulo": f"DOSSIÊ CLÍNICO MASTER - {modulo.upper()}",
-        "eixos": {
-            "1. Dados e Anamnese": f"Paciente: {nome}. Queixa: {anamnese}",
-            "2. Registro": "Captura Ultra-HD processada via Motor Sentinel.",
-            "3. Estrutura": f"Densidade tecidual calculada em {res['densidade']}.",
-            "4. Sinais": f"Nível de Estresse em {res['estresse']}%. Sinais compatíveis com sobrecarga sistêmica.",
-            "5. Interpretação": "Mapeamento sugere fragilidade em órgãos de choque específicos.",
-            "6. Plano Terapêutico": "Recomenda-se ajuste nutricional e manejo de estresse oxidativo.",
-            "7. Limitações": "Método preventivo/educativo. Não substitui diagnóstico médico."
+    def orquestrar(self, comando, contexto):
+        agentes = {
+            "CTO": "Aja como Arquiteto Sênior.",
+            "Frontend": "Aja como Eng. Frontend.",
+            "Backend": "Aja como Eng. Backend.",
+            "Database": "Aja como DBA.",
+            "Security": "Aja como Red Team.",
+            "QA": "Aja como QA.",
+            "DevOps": "Aja como DevOps."
         }
-    }
-
-def aplicar_mapa_iridologico(img_pil):
-    """Overlay de Jensen."""
-    img_array = np.array(img_pil.convert('RGB'))
-    h, w = img_array.shape[:2]
-    overlay = img_array.copy()
-    cv2.circle(overlay, (w//2, h//2), int(w//3), (59, 130, 246), 2)
-    return Image.fromarray(cv2.addWeighted(overlay, 0.3, img_array, 0.7, 0))
-
-def motor_multimodal_genesis(a, p): return f"Resposta Super IA: Análise concluída para '{p}'."
-import numpy as np
-
-def mapear_sinal_iridologico(hora, zona):
-    """
-    Mapeia coordenadas horárias para a base teórica de Jensen/Batelo (v13.0)
-    """
-    biblioteca_jensen = {
-        "12h": {"Zona 2": "Área Cerebral / Vitalidade", "Zona 4": "Plexo Solar"},
-        "1h":  {"Zona 2": "Face / Maxilar", "Zona 3": "Garganta"},
-        "2h-3h": {"Zona 2": "Fígado (D) / Coração (E)", "Zona 3": "Brônquios"},
-        "6h":  {"Zona 4": "Região Intestinal / Rins", "Zona 7": "Pele / Eliminação"},
-        "9h":  {"Zona 3": "Pulmões", "Zona 2": "Baço (E)"}
-    }
-    
-    contexto = biblioteca_jensen.get(hora, {}).get(zona, "Área Geral - Observar Densidade")
-    return contexto
-
-def calcular_intensidade_sinal(roi_imagem):
-    """
-    Analisa a profundidade da lacuna via densidade de pixels (Tons de Cinza)
-    """
-    gray = cv2.cvtColor(roi_imagem, cv2.COLOR_BGR2GRAY)
-    score = np.mean(gray)
-    if score < 80: return "Forte (Destruição/Cripta)"
-    if score < 150: return "Moderada (Lacuna)"
-    return "Leve (Debilidade)"
+        resultados = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
+            futuros = {executor.submit(self._chamar_especialista, p, s, comando, contexto): p for p, s in agentes.items()}
+            for f in concurrent.futures.as_completed(futuros):
+                resultados.append(f"### 🧠 {futuros[f]}\n{f.result()}")
+        return "\n\n---\n\n".join(resultados)
